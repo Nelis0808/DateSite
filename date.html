@@ -15,12 +15,16 @@
     <script src="script.js" defer></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
+
             async function showRandomIdea(fileName, resultId) {
                 const container = document.getElementById(resultId);
 
+                // 1. Hide current card first (if exists)
+                container.innerHTML = `<div class="card">...</div>`;
+
                 try {
                     const response = await fetch(fileName);
-                    const text     = await response.text();
+                    const text = await response.text();
 
                     const ideas = text
                         .split("\n")
@@ -29,12 +33,16 @@
 
                     const randomIdea = ideas[Math.floor(Math.random() * ideas.length)];
 
-                    // alleen inhoud vervangen (niet container opnieuw opbouwen)
-                    container.innerHTML = `<div class="card"><h3>${randomIdea}</h3></div>`;
+                    // 2. Set new content hidden first
+                    container.innerHTML = `
+                        <div class="card">
+                            <h3>${randomIdea}</h3>
+                        </div>
+                    `;
 
                     const card = container.querySelector(".card");
 
-                    // animation restart fix
+                    // 3. trigger animation delay
                     requestAnimationFrame(() => {
                         card.classList.add("show");
                     });
@@ -75,7 +83,7 @@
         /* each result box */
         .result-box {
             width: 45%;
-            min-height: 80px;
+            min-height: 120px; /* reserve space */
         }
 
         /* animation state */
@@ -92,21 +100,6 @@
             transform: translateY(0) scale(1);
             filter: blur(0);
         }
-        .card-slot {
-            min-height: 120px; /* voorkomt “springen” */
-        }
-
-        .card {
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.4s ease;
-        }
-
-        .card.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
     </style>
 </head>
 <body>
@@ -126,20 +119,15 @@
     </section>
     
     <!-- Results -->
-    <div class="results">
-        <div class="result-box left">
-            <div id="resultBinnen" class="card-slot"></div>
-        </div>
-
-        <div class="result-box right">
-            <div id="resultBuiten" class="card-slot"></div>
-        </div>
+    <div class="results" style="padding-bottom: 4rem;">
+        <div id="resultBinnen" class="result-box left"  style="transform: translateX(calc(var(--move-amount-btn) - 75px));"></div>
+        <div id="resultBuiten" class="result-box right" style="transform: translateX(calc(var(--move-amount-btn) - 130px));"></div>
     </div>
 
     <!-- Homepage -->
-    <section id="homepage" class="container" style="display:flex; justify-content:center; align-items:center;">
-        <a href="homepage.html">
-            <button class="btn btn-primary" style="font-size: 1.5rem; border: none">
+    <section id="to-index" class="container" style="display:flex; justify-content:center; align-items:center;">
+        <a href="index.html">
+            <button class="btn btn-primary" style="font-size: 1.5rem; border: none;">
                 Homepage
             </button>
         </a>
