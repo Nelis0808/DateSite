@@ -38,7 +38,7 @@
 
   <header class="navbar">
     <div class="container nav">
-      <div class="logo">Keuzes maken</div>
+      <div class="logo">Tournament</div>
 
       <button id="menuBtn" class="icon-btn" aria-label="Menu openen" aria-expanded="false" aria-controls="navLinks">☰</button>
 
@@ -46,6 +46,14 @@
         <a href="index.html">Home</a>
         <a href="date.html">Date Ideeën</a>
         <a href="tournament.html">Toernooi</a>
+
+        <div id="navMoreDropdown" class="nav-dropdown">
+          <button id="navMoreBtn" class="nav-dropdown-trigger" type="button"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="navMoreMenu">
+            Meer <span class="chevron" aria-hidden="true">▾</span>
+          </button>
+          <div id="navMoreMenu" class="nav-dropdown-menu" role="menu"></div>
+        </div>
       </nav>
 
       <div class="nav-actions">
@@ -100,12 +108,6 @@
       </div>
     </section>
   </main>
-
-  <footer class="site-footer">
-    <div class="container">
-      <p>&copy; <span id="year"></span>Home</p>
-    </div>
-  </footer>
 
   <button id="backToTop" class="icon-btn" aria-label="Naar boven scrollen">↑</button>
 

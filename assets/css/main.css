@@ -35,6 +35,7 @@
 
 /* 4. Reusable components */
 @import url('./components/navbar.css');
+@import url('./components/dropdown.css');
 @import url('./components/buttons.css');
 @import url('./components/cards.css');
 @import url('./components/forms.css');

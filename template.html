@@ -49,7 +49,7 @@
 
   <header class="navbar">
     <div class="container nav">
-      <div class="logo">Home</div>
+      <div class="logo">Template</div>
 
       <button id="menuBtn" class="icon-btn" aria-label="Menu openen" aria-expanded="false" aria-controls="navLinks">☰</button>
 
@@ -58,6 +58,14 @@
         <a href="date.html">Date Ideeën</a>
         <a href="tournament.html">Toernooi</a>
         <!-- <a href="your-new-page.html">Nieuwe Pagina</a> -->
+
+        <div id="navMoreDropdown" class="nav-dropdown">
+          <button id="navMoreBtn" class="nav-dropdown-trigger" type="button"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="navMoreMenu">
+            Meer <span class="chevron" aria-hidden="true">▾</span>
+          </button>
+          <div id="navMoreMenu" class="nav-dropdown-menu" role="menu"></div>
+        </div>
       </nav>
 
       <div class="nav-actions">
@@ -70,7 +78,7 @@
     <!-- HERO: big intro band. Delete the <p> or button if not needed. -->
     <section id="hero" class="hero">
       <div class="container">
-        <h1 data-typewriter>Build Something Amazing</h1>
+        <h1>Build Something Amazing</h1>
         <p>Vervang deze tekst door je eigen introductie.</p>
         <a href="#features" class="btn btn-primary">Get Started</a>
       </div>
@@ -175,7 +183,7 @@
 
   <footer class="site-footer">
     <div class="container">
-      <p>&copy; <span id="year"></span>Home</p>
+      <p>&copy; <span id="year"></span> Template</p>
     </div>
   </footer>
 

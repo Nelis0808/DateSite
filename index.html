@@ -4,7 +4,7 @@
   The "hub" page: shows the days-together counter and a grid of
   cards linking to every feature page. The card grid is rendered
   by JS (assets/js/modules/home-cards.js) from the single source
-  of truth in assets/js/config.js, add a new feature page there,
+  of truth in assets/js/config.js — add a new feature page there,
   not here.
 -->
 <html lang="nl">
@@ -56,6 +56,14 @@
         <a href="index.html">Home</a>
         <a href="date.html">Date Ideeën</a>
         <a href="tournament.html">Toernooi</a>
+
+        <div id="navMoreDropdown" class="nav-dropdown">
+          <button id="navMoreBtn" class="nav-dropdown-trigger" type="button"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="navMoreMenu">
+            Meer <span class="chevron" aria-hidden="true">▾</span>
+          </button>
+          <div id="navMoreMenu" class="nav-dropdown-menu" role="menu"></div>
+        </div>
       </nav>
 
       <div class="nav-actions">
@@ -67,7 +75,7 @@
   <main id="main">
     <section id="page-guide" class="container">
       <h1 class="text-center">
-        Samen voor <u><span id="daysTogether">0</span></u> dagen
+        Samen voor <span id="daysTogether">0</span> dagen
         <span class="heart-beat" aria-hidden="true">❤️</span>
       </h1>
       <h2 class="text-center">Klik om naar de specifieke pagina te gaan!</h2>
@@ -76,13 +84,6 @@
       <div id="pageCardsGrid" class="cards-grid"></div>
     </section>
   </main>
-
-  <!-- ============ Shared footer — kept identical on every page ============ -->
-  <footer class="site-footer">
-    <div class="container">
-      <p>&copy; <span id="year"></span>Home</p>
-    </div>
-  </footer>
 
   <button id="backToTop" class="icon-btn" aria-label="Naar boven scrollen">↑</button>
 

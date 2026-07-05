@@ -3,7 +3,7 @@
   DATE IDEAS PAGE
   Picks a random idea from assets/data/date-ideas-indoor.json or
   date-ideas-outdoor.json (see assets/js/modules/date-picker.js).
-  Add more ideas by editing those two JSON files, no code changes
+  Add more ideas by editing those two JSON files — no code changes
   needed. Add a third category by following the pattern documented
   at the top of date-picker.js.
 -->
@@ -47,6 +47,14 @@
         <a href="index.html">Home</a>
         <a href="date.html">Date Ideeën</a>
         <a href="tournament.html">Toernooi</a>
+
+        <div id="navMoreDropdown" class="nav-dropdown">
+          <button id="navMoreBtn" class="nav-dropdown-trigger" type="button"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="navMoreMenu">
+            Meer <span class="chevron" aria-hidden="true">▾</span>
+          </button>
+          <div id="navMoreMenu" class="nav-dropdown-menu" role="menu"></div>
+        </div>
       </nav>
 
       <div class="nav-actions">
@@ -58,7 +66,7 @@
   <main id="main">
     <section id="hero" class="hero">
       <div class="container">
-        <h1 data-typewriter>Kies een leuke date activiteit</h1>
+        <h1>Kies een leuke date activiteit</h1>
         <p>Geen zin om te kiezen? Laat het toeval beslissen.</p>
 
         <div class="hero-buttons">
@@ -80,12 +88,6 @@
       <a href="index.html" class="btn btn-primary btn-lg">Homepage</a>
     </section>
   </main>
-
-  <footer class="site-footer">
-    <div class="container">
-      <p>&copy; <span id="year"></span>Kalina &amp; Niels</p>
-    </div>
-  </footer>
 
   <button id="backToTop" class="icon-btn" aria-label="Naar boven scrollen">↑</button>
 
