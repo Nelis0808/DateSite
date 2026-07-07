@@ -20,7 +20,7 @@
 //   2. Import it below and call it inside DOMContentLoaded.
 // =================================================================
 
-import { initTheme } from './modules/theme.js';
+import { initTheme, initColorTheme } from './modules/theme.js';
 import { initMobileMenu, initScrolledShadow, initSmoothScroll, initBackToTop, initActiveNavLink } from './modules/navbar.js';
 import { initNavDropdown } from './modules/nav-dropdown.js';
 import { initRevealOnScroll } from './modules/reveal.js';
@@ -37,6 +37,7 @@ import { initPhotoGallery } from './modules/photo-gallery.js';
 document.addEventListener('DOMContentLoaded', () => {
   // Site-wide chrome (safe no-ops on pages without these elements)
   initTheme();
+  initColorTheme();
   initNavDropdown();  /* Must run before initMobileMenu*/
   initMobileMenu();
   initScrolledShadow();

@@ -39,6 +39,11 @@ export function initPhotoGallery() {
   const resultsGrid = qs('#pgResults', root);
   const statusEl = qs('#pgStatus', root);
 
+  const lightbox = qs('#pgLightbox', root);
+  const lightboxImage = qs('#pgLightboxImage', lightbox);
+  const lightboxCaption = qs('#pgLightboxCaption', lightbox);
+  const lightboxClose = qs('#pgLightboxClose', lightbox);
+
   // ---- Local session helpers -----------------------------------
 
   function getStoredAuth() {
@@ -154,10 +159,20 @@ export function initPhotoGallery() {
         const figure = document.createElement('figure');
         figure.className = 'pg-card';
 
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'pg-card-trigger';
+        trigger.disabled = true; // enabled once its image has actually loaded
+        trigger.setAttribute('aria-label', photo.caption ? `Vergroot: ${photo.caption}` : 'Foto vergroten');
+
         const imageDiv = document.createElement('div');
         imageDiv.className = 'pg-card-image pg-card-loading';
         imageDiv.setAttribute('aria-hidden', 'true');
-        figure.appendChild(imageDiv);
+        trigger.appendChild(imageDiv);
+        trigger.addEventListener('click', () => {
+          if (trigger.dataset.imageUrl) openLightbox(trigger.dataset.imageUrl, photo.caption);
+        });
+        figure.appendChild(trigger);
 
         if (photo.caption) {
           const caption = document.createElement('figcaption');
@@ -165,18 +180,22 @@ export function initPhotoGallery() {
           figure.appendChild(caption);
         }
 
+        trigger.addEventListener('click', () => {
+          if (trigger.dataset.imageUrl) openLightbox(trigger.dataset.imageUrl, photo.caption);
+        });
+
         resultsGrid.appendChild(figure);
-        return { photo, imageDiv };
+        return { photo, imageDiv, trigger };
       });
 
-      await Promise.all(cardRefs.map(({ photo, imageDiv }) => loadPhotoImage(photo, imageDiv, token)));
+      await Promise.all(cardRefs.map(({ photo, imageDiv, trigger }) => loadPhotoImage(photo, imageDiv, trigger, token)));
     } catch (error) {
       console.error('Photo list error:', error);
       statusEl.textContent = `❌ Kon foto's niet laden (${error.message}).`;
     }
   }
 
-  async function loadPhotoImage(photo, imageDiv, token) {
+  async function loadPhotoImage(photo, imageDiv, trigger, token) {
     try {
       const response = await fetch(`${workerUrl}/photos/object?key=${encodeURIComponent(photo.key)}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -187,12 +206,50 @@ export function initPhotoGallery() {
       const objectUrl = URL.createObjectURL(blob);
       imageDiv.style.backgroundImage = `url('${objectUrl}')`;
       imageDiv.classList.remove('pg-card-loading');
+      trigger.dataset.imageUrl = objectUrl;
+      trigger.disabled = false;
     } catch (error) {
       console.error(`Kon foto "${photo.key}" niet laden:`, error);
       imageDiv.classList.remove('pg-card-loading');
       imageDiv.classList.add('pg-card-error');
     }
   }
+
+  // ---- Lightbox ------------------------------------------------------
+  // Click (or Enter/Space, since it's a real <button>) any loaded photo
+  // to see it full-size with its caption; the rest of the page dims via
+  // the semi-opaque backdrop. Escape, the ✕ button, or a click outside
+  // the photo all close it again.
+
+  let lastFocusedTrigger = null;
+
+  function openLightbox(imageUrl, caption) {
+    lastFocusedTrigger = document.activeElement;
+    lightboxImage.src = imageUrl;
+    lightboxImage.alt = caption || '';
+    lightboxCaption.textContent = caption || '';
+    lightbox.classList.remove('hidden');
+    document.body.classList.add('pg-lightbox-locked'); // prevents background scroll
+    lightboxClose.focus();
+  }
+
+  function closeLightbox() {
+    lightbox.classList.add('hidden');
+    document.body.classList.remove('pg-lightbox-locked');
+    lightboxImage.src = '';
+    if (lastFocusedTrigger) lastFocusedTrigger.focus();
+  }
+
+  lightboxClose.addEventListener('click', closeLightbox);
+
+  // Click on the dimmed backdrop (i.e. not on the photo/caption itself) closes it.
+  lightbox.addEventListener('click', (event) => {
+    if (event.target === lightbox) closeLightbox();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !lightbox.classList.contains('hidden')) closeLightbox();
+  });
 
   // ---- Wiring ------------------------------------------------------
 

@@ -59,6 +59,7 @@
       </nav>
 
       <div class="nav-actions">
+        <button id="colorThemeToggle" class="icon-btn" aria-label="Zet roze thema aan" aria-pressed="false">🌸</button>
         <button id="themeToggle" class="icon-btn" aria-label="Donkere modus" aria-pressed="false">🌙</button>
       </div>
     </div>
@@ -104,6 +105,17 @@
       <!-- LOGGED-IN: filled by assets/js/modules/photo-gallery.js after a
            valid passphrase — never contains anything server-rendered. -->
       <div id="pgResults" class="pg-grid hidden"></div>
+
+      <!-- LIGHTBOX: click any photo to open it full-size with its caption;
+           the rest of the page dims behind it. Filled/shown by
+           assets/js/modules/photo-gallery.js. -->
+      <div id="pgLightbox" class="pg-lightbox hidden" role="dialog" aria-modal="true" aria-label="Vergrote foto">
+        <button type="button" id="pgLightboxClose" class="pg-lightbox-close" aria-label="Sluiten">✕</button>
+        <figure class="pg-lightbox-content">
+          <img id="pgLightboxImage" alt="">
+          <figcaption id="pgLightboxCaption"></figcaption>
+        </figure>
+      </div>
     </section>
   </main>
 

@@ -19,8 +19,15 @@
      Kept the exact same palette, just expressed as hex so the
      values are precise, easy to diff, and easy to run through
      a contrast checker or design tool.
+
+     The 7 "brand hue" tokens just below (--color-primary through
+     --color-accent) are the ONLY tokens that change between the
+     "blauw" and "roze" color themes (see the [data-color-theme]
+     blocks further down). Everything else here (neutrals, spacing,
+     radius, shadow, type) is shared by both themes and both light
+     and dark mode.
      --------------------------------------------------------- */
-  --color-primary:        #7B68EE; /* mediumslateblue */
+  --color-primary:        #3867d6; /* mediumslateblue */
   --color-secondary:      #6495ED; /* cornflowerblue  */
   --color-tertiary:       #00BFFF; /* deepskyblue     */
   --color-primary-dark:   #000080; /* navy            */
@@ -121,8 +128,44 @@
   --z-navbar: 900;
   --z-overlay: 950;
   --z-back-to-top: 800;
+  --z-lightbox: 1000;
 
   color-scheme: light;
+}
+
+/* ---------------------------------------------------------
+   COLOR THEME: "blauw" vs "roze"
+   -------------------------------------------------------------
+   Toggled by JS setting data-color-theme="blue" | "pink" on <html>
+   (see assets/js/modules/theme.js, initColorTheme()). Only the 7
+   brand hue tokens are redefined here — every component already
+   references them (never a raw hex), so switching theme reskins
+   buttons, the hero gradient, badges, links, etc. everywhere at
+   once with zero component-file changes.
+
+   This also automatically carries into dark mode: dark mode (see
+   below) only redefines the neutral --color-bg/surface/text/border
+   tokens, never these brand tokens, so whichever color theme is
+   active stays active when dark mode is toggled too.
+   --------------------------------------------------------- */
+[data-color-theme='blue'] {
+  --color-primary:        #2d60c5; /* mediumslateblue */
+  --color-secondary:      #6495ED; /* cornflowerblue  */
+  --color-tertiary:       #00BFFF; /* deepskyblue     */
+  --color-primary-dark:   #000080; /* navy            */
+  --color-secondary-dark: #4169E1; /* royalblue       */
+  --color-tertiary-dark:  #5F9EA0; /* cadetblue       */
+  --color-accent:         #FF69B4; /* hotpink         */
+}
+
+[data-color-theme='pink'] {
+  --color-primary:        #D6467A; /* rose            */
+  --color-secondary:      #FF6FA5; /* light rose      */
+  --color-tertiary:       #FFB6C1; /* lightpink       */
+  --color-primary-dark:   #7A1F45; /* deep rose       */
+  --color-secondary-dark: #C2185B; /* raspberry       */
+  --color-tertiary-dark:  #B76E79; /* dusty rose      */
+  --color-accent:         #5B8DEF; /* contrasting blue pop */
 }
 
 /* ---------------------------------------------------------

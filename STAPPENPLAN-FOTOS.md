@@ -14,10 +14,10 @@ eerst het wachtwoord checkt. Zonder geldig wachtwoord krijgt de
 browser letterlijk geen foto-bytes toegestuurd — het is geen kwestie
 van "verstopt", het is echt niet opvraagbaar.
 
-'''
+```
 Browser (photos.html)  →  Worker "photo-gallery" (checkt wachtwoord)  →  Privé R2-bucket (echte foto's)
                             ↑ hier staan de 2 wachtwoorden + de token-sleutel
-'''
+```
 
 Dit is een **tweede, aparte Worker** naast de Ticketmaster-proxy uit de
 vorige update — ze hebben niets met elkaar te maken en kunnen
@@ -51,8 +51,9 @@ automatisch op (de Worker vraagt live de inhoud van de bucket op).
 
 ### Optioneel: bijschriften toevoegen
 
-Wil je een tekstje onder een foto? Maak lokaal een bestand
-`captions.json` met deze vorm:
+Een kant-en-klaar voorbeeld staat in `cloudflare-worker-photos/captions.example.json`
+in deze zip. Kopieer het, hernoem naar `captions.json`, en vervang de
+bestandsnamen door die van je eigen geüploade foto's:
 
 ```json
 {
@@ -117,7 +118,7 @@ publieke bestand staan.
 
 ## 5. Bestanden in je repo zetten
 
-'''
+```
 photos.html                                  (nieuw)
 assets/css/pages/photos.css                  (nieuw)
 assets/js/modules/photo-gallery.js           (nieuw)
@@ -125,7 +126,7 @@ assets/js/config.js                          (aangepast)
 assets/js/main.js                            (aangepast — 2 regels)
 cloudflare-worker-photos/worker.js           (nieuw, apart van de site)
 cloudflare-worker-photos/wrangler.toml       (nieuw, optioneel voor CLI)
-'''
+```
 
 Net als bij Ticketmaster: geen handmatige nav-aanpassingen nodig, want
 "Onze Foto's" staat al in `config.js` → verschijnt automatisch in het

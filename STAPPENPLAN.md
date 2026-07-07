@@ -15,10 +15,10 @@ houdt en het verzoek doorstuurt naar Ticketmaster. De site zelf blijft
 100% statisch/geen build-stap — de Worker is een klein los onderdeel dat
 je één keer apart deployt.
 
-'''
+```
 Browser (ticketmaster.html)  →  Cloudflare Worker (jouw proxy)  →  Ticketmaster Discovery API
                                   ↑ hier staat de geheime key
-'''
+```
 
 ---
 
@@ -78,7 +78,7 @@ const ALLOWED_ORIGINS = [
 Kopieer uit deze zip naar de root van je `DateSite`-repo (structuur is
 identiek, dus alles landt op de juiste plek):
 
-'''
+```
 ticketmaster.html                          (nieuw)
 assets/css/pages/ticketmaster.css          (nieuw)
 assets/js/modules/ticketmaster.js          (nieuw)
@@ -86,7 +86,7 @@ assets/js/config.js                        (aangepast — zie hieronder)
 assets/js/main.js                          (aangepast — 2 regels toegevoegd)
 cloudflare-worker/worker.js                (nieuw, niet onderdeel van de site zelf)
 cloudflare-worker/wrangler.toml            (nieuw, optioneel voor wrangler-CLI gebruik)
-'''
+```
 
 Je hoeft de `<header>`/nav van de bestaande pagina's **niet** met de
 hand aan te passen: `Ticketmaster` is geen "permanente" nav-link (net

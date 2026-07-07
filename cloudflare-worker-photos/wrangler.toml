@@ -9,7 +9,7 @@ compatibility_date = "2025-01-01"
 # Bucket) if you're not using the CLI — see STAPPENPLAN-FOTOS.md.
 [[r2_buckets]]
 binding = "PHOTOS_BUCKET"
-bucket_name = "private-photos"
+bucket_name = "our-private-photos"
 
 # Secrets (PASSPHRASE_A, PASSPHRASE_B, TOKEN_SECRET) are NOT set here.
 # After deploying, run:

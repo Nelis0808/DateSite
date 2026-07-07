@@ -114,11 +114,90 @@
   box-shadow: var(--shadow-lg);
 }
 
+.pg-card-trigger {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.pg-card-trigger:disabled {
+  cursor: default;
+}
+
+.pg-card-trigger:focus-visible .pg-card-image {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .pg-card-image {
   aspect-ratio: 4 / 3;
   background-size: cover;
   background-position: center;
   background-color: var(--color-border);
+}
+
+/* == LIGHTBOX == */
+.pg-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-lightbox);
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+}
+
+.pg-lightbox-content {
+  margin: 0;
+  max-width: min(90vw, 1100px);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.pg-lightbox-content img {
+  max-width: 100%;
+  max-height: 80vh;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  object-fit: contain;
+}
+
+.pg-lightbox-content figcaption {
+  color: var(--color-white);
+  text-align: center;
+  font-size: var(--fs-md);
+}
+
+.pg-lightbox-close {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-5);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--color-white);
+  font-size: var(--fs-lg);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.pg-lightbox-close:hover,
+.pg-lightbox-close:focus-visible {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Prevents the page behind the lightbox from scrolling while it's open. */
+body.pg-lightbox-locked {
+  overflow: hidden;
 }
 
 .pg-card-loading {
@@ -151,6 +230,88 @@
 
 @keyframes pg-shimmer {
   to { background-position-x: -200%; }
+}
+
+/* == CLICKABLE PHOTO TRIGGER (reset button styles) == */
+.pg-card-trigger {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--radius);
+}
+
+.pg-card-trigger:disabled {
+  cursor: default;
+}
+
+.pg-card-trigger:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* == LIGHTBOX == */
+.pg-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-lightbox);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  background: rgba(0, 0, 0, 0.85); /* dims/defocuses the rest of the page */
+  backdrop-filter: blur(4px);
+}
+
+body.pg-lightbox-locked {
+  overflow: hidden;
+}
+
+.pg-lightbox-content {
+  margin: 0;
+  max-width: min(90vw, 900px);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.pg-lightbox-content img {
+  max-width: 100%;
+  max-height: 75vh;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  object-fit: contain;
+}
+
+.pg-lightbox-content figcaption {
+  color: var(--color-white);
+  text-align: center;
+  font-size: var(--fs-md);
+}
+
+.pg-lightbox-close {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-5);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-white);
+  font-size: var(--fs-lg);
+  cursor: pointer;
+}
+
+.pg-lightbox-close:hover,
+.pg-lightbox-close:focus-visible {
+  background: rgba(255, 255, 255, 0.25);
+  outline: 2px solid var(--color-white);
+  outline-offset: 2px;
 }
 
 @media (max-width: 600px) {
