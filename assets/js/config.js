@@ -52,17 +52,17 @@ export const siteConfig = {
       status: 'available',
     },
     {
+      title: 'Onze Foto\u2019s',
+      description: 'Een galerij vol herinneringen!',
+      href: 'photos.html',
+      emoji: '📸',
+      status: 'available',
+    },
+    {
       title: 'Bucket List',
       description: 'Dingen die we samen willen doen.',
       emoji: '📝',
       status: 'coming-soon',
-    },
-    {
-      title: 'Onze Foto\u2019s',
-      description: 'Een galerij vol herinneringen \u2014 alleen voor jullie twee.',
-      href: 'photos.html',
-      emoji: '📸',
-      status: 'available',
     },
     {
       title: 'Reis Ideeën',
@@ -104,8 +104,8 @@ export const siteConfig = {
   // See settings-dropdown.js's "EXTENDING" comment for how
   // to turn one of these into a real, working setting later.
   settings: [
-    { label: 'Taal', emoji: '🌐' },
-    { label: 'Lettergrootte', emoji: '🔠' },
+    // { label: 'Taal', emoji: '🌐' },
+    // { label: 'Lettergrootte', emoji: '🔠' },
     { label: 'Meldingen', emoji: '🔔' },
   ],
 

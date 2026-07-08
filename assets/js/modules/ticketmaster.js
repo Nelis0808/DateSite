@@ -119,7 +119,11 @@ export function initTicketmaster() {
       }
 
       const data = await response.json();
-      const events = data._embedded?.events ?? [];
+      // Ticketmaster still returns cancelled/postponed shows (e.g. Anouk's
+      // cancelled dates) mixed in with the rest — filter those out before
+      // rendering so "aankomende sales" only shows shows that are actually
+      // still happening.
+      const events = (data._embedded?.events ?? []).filter(isStillHappening);
       const pageInfo = data.page ?? { number: 0, totalPages: 0, totalElements: 0 };
 
       if (replace && events.length === 0) {
@@ -132,8 +136,12 @@ export function initTicketmaster() {
       resultsEl.insertAdjacentHTML('beforeend', events.map(renderCard).join(''));
       qsa('.fade-up', resultsEl).forEach((el) => el.classList.add('visible')); // already-fetched cards don't need scroll-reveal delay
 
+      // Count the cards actually shown (not pageInfo.totalElements — that
+      // count comes straight from Ticketmaster and still includes the
+      // cancelled/postponed shows we just filtered out above).
+      const shownCount = resultsEl.children.length;
       const countryLabel = COUNTRY_LABELS[countrySelect.value] ?? countrySelect.value;
-      statusEl.textContent = `${pageInfo.totalElements} resultaten in ${countryLabel}${
+      statusEl.textContent = `${shownCount} resultaten in ${countryLabel}${
         state.mode === 'search' ? ` voor “${state.keyword}”` : ''
       }.`;
 
@@ -146,6 +154,13 @@ export function initTicketmaster() {
     } finally {
       state.loading = false;
     }
+  }
+
+  /** Skip events Ticketmaster marks as cancelled or postponed — they're
+   *  not something you can actually still buy tickets for. */
+  function isStillHappening(event) {
+    const statusCode = event.dates?.status?.code;
+    return statusCode !== 'cancelled' && statusCode !== 'postponed';
   }
 
   function emptyMessage(mode) {

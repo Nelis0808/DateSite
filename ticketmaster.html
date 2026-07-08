@@ -37,51 +37,7 @@
     </p>
   </noscript>
 
-  <header class="navbar">
-    <div class="container nav">
-      <div class="logo">Ticketmaster</div>
-
-      <button id="menuBtn" class="icon-btn" aria-label="Menu openen" aria-expanded="false" aria-controls="navLinks">☰</button>
-
-      <nav id="navLinks" class="nav-links" aria-label="Hoofdmenu">
-        <a href="index.html">Home</a>
-        <a href="date.html">Date Ideeën</a>
-        <a href="tournament.html">Toernooi</a>
-
-        <div id="navMoreDropdown" class="nav-dropdown">
-          <button id="navMoreBtn" class="nav-dropdown-trigger" type="button"
-                  aria-haspopup="true" aria-expanded="false" aria-controls="navMoreMenu">
-            Meer <span class="chevron" aria-hidden="true">▾</span>
-          </button>
-          <div id="navMoreMenu" class="nav-dropdown-menu" role="menu"></div>
-        </div>
-      </nav>
-
-      <div class="nav-actions">
-        <div id="navSettingsDropdown" class="settings-dropdown">
-          <button id="navSettingsBtn" class="icon-btn settings-trigger" type="button"
-                  aria-haspopup="true" aria-expanded="false" aria-controls="navSettingsMenu" aria-label="Instellingen">⚙️</button>
-          <div id="navSettingsMenu" class="settings-menu" role="menu" aria-label="Instellingen">
-            <div class="settings-menu-heading">Instellingen</div>
-
-            <div class="settings-item">
-              <span class="settings-item-label">🌙 Dark mode</span>
-              <button id="themeToggle" class="switch" type="button" role="switch" aria-checked="false" aria-label="Zet donkere modus aan"></button>
-            </div>
-
-            <div class="settings-item">
-              <span class="settings-item-label">🎨 Pink theme</span>
-              <button id="colorThemeToggle" class="switch" type="button" role="switch" aria-checked="false" aria-label="Zet roze thema aan"></button>
-            </div>
-
-            <!-- Auto-filled by assets/js/modules/settings-dropdown.js from
-                 siteConfig.settings — disabled "Binnenkort" placeholders. -->
-            <div id="settingsExtra"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </header>
+  <div data-include="header"></div>
 
   <main id="main">
     <section id="hero" class="hero">
@@ -140,7 +96,7 @@
     </section>
   </main>
 
-  <button id="backToTop" class="icon-btn" aria-label="Naar boven scrollen">↑</button>
+  <div data-include="chrome-end"></div>
 
   <script type="module" src="assets/js/main.js"></script>
 </body>

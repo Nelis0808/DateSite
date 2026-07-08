@@ -18,8 +18,14 @@
 //      initYourFeature() function that bails out early if its
 //      elements aren't on the page.
 //   2. Import it below and call it inside DOMContentLoaded.
+//
+// NOTE: initLayout() (assets/js/modules/layout.js) runs first and is
+// awaited — it injects the shared header/back-to-top HTML from
+// assets/partials/ into every page. Everything else assumes that
+// HTML already exists, so don't move it below the other init calls.
 // =================================================================
 
+import { initLayout } from './modules/layout.js';
 import { initTheme, initColorTheme } from './modules/theme.js';
 import { initMobileMenu, initScrolledShadow, initSmoothScroll, initBackToTop, initActiveNavLink } from './modules/navbar.js';
 import { initNavDropdown } from './modules/nav-dropdown.js';
@@ -35,7 +41,12 @@ import { initTournament } from './modules/tournament.js';
 import { initTicketmaster } from './modules/ticketmaster.js';
 import { initPhotoGallery } from './modules/photo-gallery.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load the shared header/back-to-top partials FIRST — every module
+  // below reaches for elements (navbar, dropdowns, ...) that only
+  // exist once this has finished.
+  await initLayout();
+
   // Site-wide chrome (safe no-ops on pages without these elements)
   initTheme();
   initColorTheme();
