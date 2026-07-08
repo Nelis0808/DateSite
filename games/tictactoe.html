@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<!--
+  TIC-TAC-TOE PAGE
+  Simple two-player (same-device) boter-kaas-en-eieren. Logic lives
+  in assets/js/modules/tictactoe.js — this file only contains the
+  board markup and the scoreboard. Play again resets the board but
+  keeps the running score, so you can play many rounds in a row.
+
+  Lives at the site root (like every other page) — no subfolder.
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Speel boter, kaas en eieren tegen elkaar, zo vaak als je wilt.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>Boter, Kaas & Eieren</title>
+
+  <link rel="icon" href="../assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/pages/games.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om te kunnen spelen.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>❌⭕ Boter, Kaas & Eieren</h1>
+        <p>Om de beurt spelen op hetzelfde scherm. Speel zo vaak als je wilt!</p>
+      </div>
+    </section>
+
+    <section class="container" id="tttApp">
+      <a href="../games-hub.html" class="btn btn-outline ttt-back">&larr; Terug naar Games</a>
+
+      <!-- Running score across multiple rounds -->
+      <div class="ttt-scoreboard" aria-live="polite">
+        <div class="ttt-score ttt-score-x">
+          <span class="ttt-score-label">Speler ❌</span>
+          <span id="scoreX" class="ttt-score-value">0</span>
+        </div>
+        <div class="ttt-score ttt-score-draw">
+          <span class="ttt-score-label">Gelijk</span>
+          <span id="scoreDraw" class="ttt-score-value">0</span>
+        </div>
+        <div class="ttt-score ttt-score-o">
+          <span class="ttt-score-label">Speler ⭕</span>
+          <span id="scoreO" class="ttt-score-value">0</span>
+        </div>
+      </div>
+
+      <p id="tttStatus" class="ttt-status" aria-live="polite">Speler ❌ is aan de beurt</p>
+
+      <div id="tttBoard" class="ttt-board" role="grid" aria-label="Tic-tac-toe bord">
+        <button class="ttt-cell" type="button" role="gridcell" aria-label="Vak 1" data-index="0"></button>
+        <button class="ttt-cell" type="button" role="gridcell" aria-label="Vak 2" data-index="1"></button>
+        <button class="ttt-cell" type="button" role="gridcell" aria-label="Vak 3" data-index="2"></button>
+        <button class="ttt-cell" type="button" role="gridcell" aria-label="Vak 4" data-index="3"></button>
+        <button class="ttt-cell" type="button" role="gridcell" aria-label="Vak 5" data-index="4"></button>
+        <button class="ttt-cell" type="button" role="gridcell" aria-label="Vak 6" data-index="5"></button>
+        <button class="ttt-cell" type="button" role="gridcell" aria-label="Vak 7" data-index="6"></button>
+        <button class="ttt-cell" type="button" role="gridcell" aria-label="Vak 8" data-index="7"></button>
+        <button class="ttt-cell" type="button" role="gridcell" aria-label="Vak 9" data-index="8"></button>
+      </div>
+
+      <div class="ttt-actions">
+        <button id="tttNewRound" class="btn btn-primary" type="button">Nieuwe ronde</button>
+        <button id="tttResetScore" class="btn btn-outline" type="button">Score resetten</button>
+      </div>
+    </section>
+  </main>
+
+  <div data-include="chrome-end"></div>
+
+  <script type="module" src="../assets/js/main.js"></script>
+</body>
+</html>

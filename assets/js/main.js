@@ -40,6 +40,8 @@ import { initDatePicker } from './modules/date-picker.js';
 import { initTournament } from './modules/tournament.js';
 import { initTicketmaster } from './modules/ticketmaster.js';
 import { initPhotoGallery } from './modules/photo-gallery.js';
+import { initGamesHub } from './modules/games-hub.js';
+import { initTicTacToe } from './modules/tictactoe.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Load the shared header/back-to-top partials FIRST — every module
@@ -69,6 +71,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTournament();   // tournament.html
   initTicketmaster(); // ticketmaster.html
   initPhotoGallery(); // photos.html
+  initGamesHub();      // games-hub.html
+  initTicTacToe();     // tictactoe.html
 
   console.log(`${document.title} — initialized ✅`);
 });

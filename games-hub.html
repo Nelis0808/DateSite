@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<!--
+  GAMES HUB PAGE
+  Landing page for the Games section: a grid of clickable game
+  cards, same visual pattern as the home page's page-cards grid
+  (assets/css/components/cards.css). Available games link out to
+  their own page; games still in the works render as disabled
+  "Binnenkort" placeholders. Add a new game by adding an entry to
+  the `games` array in assets/js/modules/games-hub.js.
+
+  Lives at the site root (like every other page) — no subfolder —
+  so it uses the exact same plain "assets/..." paths as index.html,
+  date.html, etc. Nothing special to keep in sync.
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Speel samen een potje, direct in de browser.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>Games</title>
+
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/games.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om games te kunnen spelen.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>🎮 Games</h1>
+        <p>Even niets te kiezen of te plannen — gewoon een potje spelen.</p>
+      </div>
+    </section>
+
+    <section class="container">
+      <!-- Populated by assets/js/modules/games-hub.js -->
+      <div id="gamesGrid" class="cards-grid"></div>
+    </section>
+  </main>
+
+  <div data-include="chrome-end"></div>
+
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

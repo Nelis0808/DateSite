@@ -18,9 +18,9 @@ export const siteConfig = {
   // Top navigation, rendered on every page that includes a
   // <header class="navbar">. Add a new page? Add a link here too.
   nav: [
-    { label: 'Home'       , href: 'index.html' },
-    { label: 'Date Ideeën', href: 'date.html' },
-    { label: 'Toernooi'   , href: 'tournament.html' },
+    { label: 'Home'         , href: 'index.html' },
+    { label: 'Date Ideeën'  , href: 'date.html' },
+    { label: 'Ticketmaster' , href: 'ticketmaster.html' },
   ],
 
   // The clickable "hub" cards on the home page. This is the main
@@ -56,6 +56,13 @@ export const siteConfig = {
       description: 'Een galerij vol herinneringen!',
       href: 'photos.html',
       emoji: '📸',
+      status: 'available',
+    },
+    {
+      title: 'Games',
+      description: 'Speel samen een potje, direct in de browser.',
+      href: 'games-hub.html',
+      emoji: '🎮',
       status: 'available',
     },
     {
