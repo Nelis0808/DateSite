@@ -134,8 +134,8 @@ export function initPhotoGallery() {
     resultsGrid.innerHTML = '';
 
     try {
-      const response = await fetch('${workerUrl}/photos', {
-        headers: { Authorization: 'Bearer ${token}' },
+      const response = await fetch(`${workerUrl}/photos`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.status === 401) {
@@ -194,7 +194,7 @@ export function initPhotoGallery() {
       await Promise.all(cardRefs.map(({ photo, imageDiv, trigger }) => loadPhotoImage(photo, imageDiv, trigger, token)));
     } catch (error) {
       console.error('Photo list error:', error);
-      statusEl.textContent = `❌ Could not load photo due to: (${error.message}).`;
+      statusEl.textContent = `❌ Could not load photo due to: ${error.message}.`;
     }
   }
 
