@@ -149,7 +149,7 @@ export function initConnect4() {
   function playerLabel(player) {
     return player === 'B'
       ? 'Blauw 🔵'
-      : 'Roze <img src="assets/icons/player-pink.svg" alt="Roze" width="16" height="16">';
+      : 'Roze 🔴';
   }
   
   function updateStatus(text) {
