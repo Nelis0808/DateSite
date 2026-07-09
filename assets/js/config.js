@@ -11,7 +11,7 @@
 
 export const siteConfig = {
   // Shown in the logo / footer / <title> tags.
-  siteName: 'MySite',
+  siteName: 'KaliNiels',
   
   relationshipStartDate: '2021-07-12',
 

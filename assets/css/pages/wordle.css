@@ -158,10 +158,36 @@
   transform: translateY(-2px);
 }
 
-.wordle-key-wide {
-  flex: 1.6;
-  max-width: 70px;
-  font-size: var(--fs-sm);
+.wordle-key-row-actions {
+  margin-top: var(--space-2);
+  gap: var(--space-2);
+}
+
+.wordle-key-action {
+  height: 60px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: var(--fs-base);
+  background: radial-gradient(circle at center, var(--color-tertiary) 0%, var(--color-primary) 150%);
+  color: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.wordle-key-action:hover {
+  transform: scale(1.025) translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+/* Enter takes 75% of the row, backspace the remaining 25%. */
+.wordle-key-enter {
+  flex: 3;
+  max-width: none;
+}
+
+.wordle-key-back {
+  flex: 1;
+  max-width: none;
+  font-size: 1.2rem;
 }
 
 .wordle-key-correct {
@@ -183,5 +209,9 @@
   .wordle-key {
     height: 44px;
     min-width: 24px;
+  }
+
+  .wordle-key-action {
+    height: 52px;
   }
 }

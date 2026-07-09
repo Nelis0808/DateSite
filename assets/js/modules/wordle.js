@@ -3,13 +3,18 @@
 // -----------------------------------------------------------------
 // Local single-device word-guessing game, English words (see
 // assets/data/word-list.json — a curated common-English word list,
-// bucketed by length 4-10). The player picks a word length with the
-// length-picker pills; the game then behaves like classic Wordle:
-// length+1 guesses, green/yellow/gray feedback, on-screen + physical
-// keyboard support.
+// bucketed by length 4-10, then further grouped by starting letter
+// for easy browsing/editing). The player picks a word length with
+// the length-picker pills; the game then behaves like classic
+// Wordle: length+1 guesses, green/yellow/gray feedback, on-screen +
+// physical keyboard support.
 //
 // Data file is shared with hangman.js (assets/js/modules/hangman.js)
-// — same JSON, same shape: { "4": [...], "5": [...], ... }.
+// — same JSON, same shape:
+//   { "4": { "A": [...], "B": [...], ... }, "5": { ... }, ... }
+// Both modules flatten each length's letter-groups into one array
+// right after loading (see flattenWordData below), so the rest of
+// the game logic just deals with plain arrays, same as before.
 // =================================================================
 
 const DATA_URL = new URL('../../data/word-list.json', import.meta.url);
@@ -20,16 +25,26 @@ const LENGTH_STORAGE_KEY = 'wordleLength';
 const KEYBOARD_ROWS = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
   ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-  ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK'],
+  ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
 ];
 
-let wordsByLength = null; // loaded once, cached
+let wordsByLength = null; // loaded once, cached — flat arrays keyed by length
+
+/** { "4": { "A": [...], "B": [...] } } -> { "4": [...all merged...] } */
+function flattenWordData(raw) {
+  const flat = {};
+  for (const [length, byLetter] of Object.entries(raw)) {
+    flat[length] = Object.values(byLetter).flat();
+  }
+  return flat;
+}
 
 async function loadWords() {
   if (wordsByLength) return wordsByLength;
   const response = await fetch(DATA_URL);
   if (!response.ok) throw new Error(`Kon woordenlijst niet laden (HTTP ${response.status})`);
-  wordsByLength = await response.json();
+  const raw = await response.json();
+  wordsByLength = flattenWordData(raw);
   return wordsByLength;
 }
 
@@ -97,6 +112,7 @@ export function initWordle() {
       btn.textContent = String(len);
       btn.setAttribute('aria-pressed', String(len === wordLength));
       btn.addEventListener('click', () => {
+        btn.blur(); // don't leave this button focused — see newWordBtn below for why
         if (len === wordLength) return;
         wordLength = len;
         localStorage.setItem(LENGTH_STORAGE_KEY, String(len));
@@ -131,13 +147,46 @@ export function initWordle() {
         const keyBtn = document.createElement('button');
         keyBtn.type = 'button';
         keyBtn.dataset.key = key;
-        keyBtn.className = 'wordle-key' + (key === 'ENTER' || key === 'BACK' ? ' wordle-key-wide' : '');
-        keyBtn.textContent = key === 'BACK' ? '⌫' : key === 'ENTER' ? 'Enter' : key;
-        keyBtn.addEventListener('click', () => handleKey(key));
+        keyBtn.className = 'wordle-key';
+        keyBtn.textContent = key;
+        keyBtn.addEventListener('click', () => {
+          handleKey(key);
+          keyBtn.blur(); // don't leave this button focused — see newWordBtn below for why
+        });
         rowEl.appendChild(keyBtn);
       });
       keyboard.appendChild(rowEl);
     });
+
+    // Enter + backspace get their own row, big touch targets in the
+    // site's brand-color gradient (auto-adapts to the blue/pink theme),
+    // Enter taking 75% of the width and Backspace the remaining 25%.
+    const actionRow = document.createElement('div');
+    actionRow.className = 'wordle-key-row wordle-key-row-actions';
+
+    const enterBtn = document.createElement('button');
+    enterBtn.type = 'button';
+    enterBtn.dataset.key = 'ENTER';
+    enterBtn.className = 'wordle-key wordle-key-action wordle-key-enter';
+    enterBtn.textContent = 'Enter';
+    enterBtn.addEventListener('click', () => {
+      handleKey('ENTER');
+      enterBtn.blur();
+    });
+
+    const backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.dataset.key = 'BACK';
+    backBtn.className = 'wordle-key wordle-key-action wordle-key-back';
+    backBtn.textContent = '⌫';
+    backBtn.addEventListener('click', () => {
+      handleKey('BACK');
+      backBtn.blur();
+    });
+
+    actionRow.appendChild(enterBtn);
+    actionRow.appendChild(backBtn);
+    keyboard.appendChild(actionRow);
   }
 
   function cellAt(row, col) {
@@ -215,7 +264,11 @@ export function initWordle() {
   }
 
   function handleKey(key) {
-    if (gameOver) return;
+    if (gameOver) {
+      // Round is over — Enter starts the next one instead of doing nothing.
+      if (key === 'ENTER') startNewGame();
+      return;
+    }
 
     if (key === 'ENTER') {
       submitGuess();
@@ -237,9 +290,16 @@ export function initWordle() {
     if (event.metaKey || event.ctrlKey || event.altKey) return;
 
     const key = event.key;
-    if (key === 'Enter') { handleKey('ENTER'); return; }
-    if (key === 'Backspace') { handleKey('BACK'); return; }
-    if (/^[a-zA-Z]$/.test(key)) { handleKey(key.toUpperCase()); }
+    // Without preventDefault, a plain Enter/Space keypress ALSO triggers a
+    // native click on whatever button currently has focus (e.g. "Nieuw
+    // woord", or a length pill). That's the "new round" bug: click "Nieuw
+    // woord", it keeps keyboard focus, then the very next Enter you press
+    // to submit a guess silently re-clicks it and restarts the round
+    // instead of submitting. Blurring those buttons after click (below)
+    // avoids it too, but preventDefault here is the actual, direct fix.
+    if (key === 'Enter') { event.preventDefault(); handleKey('ENTER'); return; }
+    if (key === 'Backspace') { event.preventDefault(); handleKey('BACK'); return; }
+    if (/^[a-zA-Z]$/.test(key)) { event.preventDefault(); handleKey(key.toUpperCase()); }
   }
 
   function startNewGame() {
@@ -257,11 +317,13 @@ export function initWordle() {
   }
 
   loadWords()
-    .then((data) => {
-      wordsByLength = data;
+    .then(() => {
       renderLengthPicker();
       startNewGame();
-      newWordBtn.addEventListener('click', startNewGame);
+      newWordBtn.addEventListener('click', () => {
+        startNewGame();
+        newWordBtn.blur(); // see handlePhysicalKeydown for why this matters
+      });
       document.addEventListener('keydown', handlePhysicalKeydown);
     })
     .catch((error) => {

@@ -3,11 +3,14 @@
 // -----------------------------------------------------------------
 // Local single-device word-guessing game, English words (see
 // assets/data/word-list.json, shared with wordle.js — same JSON,
-// bucketed by length 4-10). The player picks a word length with the
-// length-picker pills, then guesses letters one at a time. 6 wrong
-// guesses allowed, each one reveals another part of the drawing
-// (assets/icons/hangman/stages, drawn inline as SVG — see
-// HANGMAN_STAGES below).
+// bucketed by length 4-10, then further grouped by starting letter:
+//   { "4": { "A": [...], "B": [...], ... }, "5": { ... }, ... }
+// Flattened into plain per-length arrays right after loading (see
+// flattenWordData below), same as before. The player picks a word
+// length with the length-picker pills, then guesses letters one at
+// a time. 6 wrong guesses allowed, each one reveals another part of
+// the drawing (assets/icons/hangman/stages, drawn inline as SVG —
+// see HANGMAN_STAGES below).
 // =================================================================
 
 const DATA_URL = new URL('../../data/word-list.json', import.meta.url);
@@ -38,13 +41,23 @@ const GALLOWS_BASE = `
   <line x1="140" y1="20" x2="140" y2="52" />
 `;
 
-let wordsByLength = null;
+let wordsByLength = null; // loaded once, cached — flat arrays keyed by length
+
+/** { "4": { "A": [...], "B": [...] } } -> { "4": [...all merged...] } */
+function flattenWordData(raw) {
+  const flat = {};
+  for (const [length, byLetter] of Object.entries(raw)) {
+    flat[length] = Object.values(byLetter).flat();
+  }
+  return flat;
+}
 
 async function loadWords() {
   if (wordsByLength) return wordsByLength;
   const response = await fetch(DATA_URL);
   if (!response.ok) throw new Error(`Kon woordenlijst niet laden (HTTP ${response.status})`);
-  wordsByLength = await response.json();
+  const raw = await response.json();
+  wordsByLength = flattenWordData(raw);
   return wordsByLength;
 }
 
@@ -87,6 +100,7 @@ export function initHangman() {
       btn.textContent = String(len);
       btn.setAttribute('aria-pressed', String(len === wordLength));
       btn.addEventListener('click', () => {
+        btn.blur(); // don't leave this button focused — see newWordBtn below for why
         if (len === wordLength) return;
         wordLength = len;
         localStorage.setItem(LENGTH_STORAGE_KEY, String(len));
@@ -127,7 +141,10 @@ export function initHangman() {
       btn.className = 'hangman-key';
       btn.dataset.key = letter;
       btn.textContent = letter;
-      btn.addEventListener('click', () => guessLetter(letter));
+      btn.addEventListener('click', () => {
+        guessLetter(letter);
+        btn.blur(); // don't leave this button focused — see newWordBtn below for why
+      });
       keyboard.appendChild(btn);
     });
   }
@@ -199,11 +216,13 @@ export function initHangman() {
   }
 
   loadWords()
-    .then((data) => {
-      wordsByLength = data;
+    .then(() => {
       renderLengthPicker();
       startNewGame();
-      newWordBtn.addEventListener('click', startNewGame);
+      newWordBtn.addEventListener('click', () => {
+        startNewGame();
+        newWordBtn.blur();
+      });
       document.addEventListener('keydown', handlePhysicalKeydown);
     })
     .catch((error) => {
