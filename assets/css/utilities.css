@@ -55,6 +55,18 @@
   transform: translateY(0);
 }
 
+/*  An inline image standing in for a color emoji that doesn't
+      exist (e.g. "pink circle" — there's only a pink HEART emoji,
+      not a pink circle, so assets/icons/player-pink.svg fills that
+      gap). Sized in `em` so it always matches the surrounding
+      text/emoji size, wherever it's dropped in. */
+.emoji-icon {
+  height: 1em;
+  width: 1em;
+  vertical-align: -0.15em;
+  display: inline-block;
+}
+
 .float {
   animation: float 4s ease-in-out infinite;
 }

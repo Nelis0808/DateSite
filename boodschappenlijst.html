@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<!--
+  BOODSCHAPPENLIJSTJE PAGE
+  Shared, synced shopping list. Logic lives in
+  assets/js/modules/boodschappenlijst.js — this file only contains
+  the markup (status line, list, add-form) that the module fills in
+  and wires up. Data is stored in Cloudflare KV via a small Worker
+  (cloudflare/cloudflare-worker-boodschappen), so both of you see the
+  same list — see STAPPENPLAN-BOODSCHAPPEN.md for how to deploy it.
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Ons gedeelde boodschappenlijstje, samen bijgehouden.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>Boodschappenlijstje</title>
+
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/boodschappenlijst.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om te werken.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>🛒 Boodschappenlijstje</h1>
+        <p>Samen bijgehouden — wat jij aanvinkt of toevoegt, ziet zij ook.</p>
+      </div>
+    </section>
+
+    <section class="container" id="shoppingListApp">
+      <!-- Shown instead of the app if config.js's workerUrl is still the placeholder -->
+      <div id="slConfigWarning" class="sl-config-warning hidden">
+        ⚠️ Nog geen Worker gekoppeld. Zie <strong>STAPPENPLAN-BOODSCHAPPEN.md</strong>
+        om de sync tussen jullie twee werkend te krijgen.
+      </div>
+
+      <p id="slStatus" class="sl-status" aria-live="polite">Laden…</p>
+
+      <ul id="slItems" class="sl-list" aria-label="Boodschappenlijstje"></ul>
+
+      <div id="slEmptyState" class="empty-state hidden">
+        Lijstje is leeg — voeg hieronder iets toe.
+      </div>
+
+      <form id="slAddForm" class="sl-add-form">
+        <input
+          type="text"
+          id="slAddInput"
+          placeholder="Bijv. afwasmiddel…"
+          maxlength="200"
+          aria-label="Nieuw item toevoegen"
+        >
+        <button type="submit" class="btn btn-primary">Toevoegen</button>
+      </form>
+      <p id="slAddError" class="sl-add-error" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <div data-include="chrome-end"></div>
+
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

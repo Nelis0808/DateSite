@@ -1,0 +1,144 @@
+/* =============================================================
+   PAGE: boodschappenlijst.html
+   -------------------------------------------------------------
+   Centered, narrow app column (same pattern as the games pages),
+   with a checkable/deletable list + an add-form underneath.
+   ============================================================= */
+
+#shoppingListApp {
+  width: min(90%, var(--container-narrow));
+  margin-inline: auto;
+  text-align: center;
+}
+
+/* == STATUS LINE (e.g. "3 van 17 afgevinkt") == */
+.sl-status {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-5);
+}
+
+.sl-status-error {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+/* == LIST == */
+.sl-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  text-align: left;
+}
+
+.sl-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  transition: opacity var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.sl-item:hover {
+  box-shadow: var(--shadow);
+}
+
+.sl-item-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.sl-checkbox {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.sl-item-text {
+  overflow-wrap: anywhere;
+}
+
+/* Checked rows: dim + strike-through, but stay fully legible
+   (never just a color change, so it still reads fine in any
+   color theme and for colorblind visitors). */
+.sl-item-checked {
+  opacity: 0.55;
+}
+
+.sl-item-checked .sl-item-text {
+  text-decoration: line-through;
+}
+
+.sl-delete {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  line-height: 1;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.sl-delete:hover,
+.sl-delete:focus-visible {
+  background: var(--color-danger);
+  color: var(--color-white);
+}
+
+/* == EMPTY STATE == */
+#slEmptyState {
+  margin-bottom: var(--space-6);
+}
+
+/* == ADD FORM == */
+.sl-add-form {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.sl-add-form input {
+  flex: 1;
+}
+
+.sl-add-error {
+  color: var(--color-danger);
+  font-size: var(--fs-sm);
+  min-height: 1.2em;
+  margin-bottom: var(--space-5);
+}
+
+/* == CONFIG WARNING (shown instead of the app if the worker URL
+   in config.js is still the placeholder) == */
+.sl-config-warning {
+  text-align: left;
+  background: var(--color-surface);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+  color: var(--color-text-muted);
+}
+
+.sl-disabled .sl-add-form,
+.sl-disabled .sl-list,
+.sl-disabled .sl-status {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .sl-add-form {
+    flex-direction: column;
+  }
+}

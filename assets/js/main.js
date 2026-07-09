@@ -40,6 +40,7 @@ import { initDatePicker } from './modules/date-picker.js';
 import { initTournament } from './modules/tournament.js';
 import { initTicketmaster } from './modules/ticketmaster.js';
 import { initPhotoGallery } from './modules/photo-gallery.js';
+import { initBoodschappenlijst } from './modules/boodschappenlijst.js';
 import { initGamesHub } from './modules/games-hub.js';
 import { initTicTacToe } from './modules/tictactoe.js';
 import { initConnect4 } from './modules/connect4.js';
@@ -74,6 +75,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTournament();   // tournament.html
   initTicketmaster(); // ticketmaster.html
   initPhotoGallery(); // photos.html
+  initBoodschappenlijst(); // boodschappenlijst.html
   initGamesHub();      // games-hub.html
   initTicTacToe();     // tictactoe.html
   initConnect4();      // connect4.html

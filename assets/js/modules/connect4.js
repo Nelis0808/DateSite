@@ -14,6 +14,12 @@
 // To use REAL photos later, just replace
 // assets/icons/connect4/player-blue.png and player-pink.png with
 // actual photos (same filenames). Nothing else needs to change.
+//
+// Pink's final fallback is another IMAGE (assets/icons/player-pink.svg)
+// rather than an emoji: there's no "pink circle" emoji, only a pink
+// HEART (🩷) or a plain RED circle (🔴), and neither actually reads
+// as "this player is pink" — so pink always falls back to the real
+// pink SVG, never emoji text.
 // =================================================================
 
 import { siteRootUrl } from './utils.js';
@@ -31,12 +37,12 @@ const AVATARS = {
   P: {
     photo: siteRootUrl('assets/icons/connect4/player-pink.png'),
     svg: siteRootUrl('assets/icons/connect4/player-pink.svg'),
-    emoji: '🔴',
-    alt: 'Speler Pink',
+    finalFallback: siteRootUrl('assets/icons/player-pink.svg'),
+    alt: 'Speler Roze',
   },
 };
 
-/** Builds an <img> that quietly degrades: photo -> svg -> emoji span (see tictactoe.js for the identical pattern). */
+/** Builds an <img> that quietly degrades: photo -> custom SVG -> emoji/final-fallback-image (see tictactoe.js for the identical pattern). */
 function buildAvatarImg(player, className) {
   const avatar = AVATARS[player];
   const img = document.createElement('img');
@@ -51,6 +57,15 @@ function buildAvatarImg(player, className) {
       img.src = avatar.svg;
       return;
     }
+
+    if (avatar.finalFallback) {
+      // Pink: no fitting emoji exists, so the last resort is still a
+      // real image, not text.
+      img.dataset.stage = 'final';
+      img.src = avatar.finalFallback;
+      return;
+    }
+
     const fallback = document.createElement('span');
     fallback.className = className + ' c4-avatar-emoji';
     fallback.textContent = avatar.emoji;
@@ -149,11 +164,13 @@ export function initConnect4() {
   function playerLabel(player) {
     return player === 'B'
       ? 'Blauw 🔵'
-      : 'Roze 🔴';
+      : 'Roze <img src="' + siteRootUrl('assets/icons/player-pink.svg') + '" alt="" class="emoji-icon">';
   }
-  
-  function updateStatus(text) {
-    statusEl.textContent = text;
+
+  // innerHTML (not textContent) because playerLabel() drops in a
+  // pink <img> — see the comment above buildAvatarImg for why.
+  function updateStatus(html) {
+    statusEl.innerHTML = html;
   }
 
   function updateScoreboard() {

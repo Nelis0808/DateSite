@@ -8,7 +8,7 @@
 //   - status: 'coming-soon' -> renders disabled, "Binnenkort" badge
 // =================================================================
 
-import { escapeHtml } from './utils.js';
+import { escapeHtml, siteRootUrl } from './utils.js';
 
 const games = [
   {
@@ -22,7 +22,7 @@ const games = [
     title: 'Vier op een Rij',
     description: 'Wie krijgt er als eerste vier schijven op een rij?',
     href: 'games/connect4.html',
-    emoji: '🔵🔴',
+    emoji: `🔵<img src="${siteRootUrl('assets/icons/player-pink.svg')}" alt="" class="emoji-icon">`,
     status: 'available',
   },
   {

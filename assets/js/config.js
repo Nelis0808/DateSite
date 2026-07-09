@@ -66,6 +66,13 @@ export const siteConfig = {
       status: 'available',
     },
     {
+      title: 'Boodschappenlijstje',
+      description: 'Samen bijgehouden, altijd in sync.',
+      href: 'boodschappenlijst.html',
+      emoji: '🛒',
+      status: 'available',
+    },
+    {
       title: 'Bucket List',
       description: 'Dingen die we samen willen doen.',
       emoji: '📝',
@@ -131,5 +138,11 @@ export const siteConfig = {
       a: 'Niels',
       b: 'Kalina',
     },
+  },
+
+  // Config for the synced shopping list (assets/js/modules/boodschappenlijst.js).
+  // STAPPENPLAN-BOODSCHAPPEN.md for usage.
+  shoppingList: {
+    workerUrl: 'https://boodschappenlijst.niels-luijten7.workers.dev',
   },
 };
