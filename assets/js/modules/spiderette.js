@@ -1,7 +1,7 @@
 // =================================================================
 // SPIDERETTE
 // -----------------------------------------------------------------
-// Single-deck (52 cards, no jokers) patience game, 10 tableau
+// Single-deck (52 cards, no jokers) patience game, 7 tableau
 // columns. This is specifically the RELAXED-PLACEMENT variant:
 //   - You may place ANY card on ANY other card that is exactly one
 //     rank higher, regardless of suit or colour (so a red 7 can sit
@@ -9,14 +9,34 @@
 //     colour/suit to place at all).
 //   - That relaxed placement does NOT count for clearing a pile: a
 //     run only gets swept away as "completed" once it is a full,
-//     unbroken King-to-Ace run of the SAME SUIT sitting together.
-//     Mixed-suit runs can be freely built and rearranged, but they
-//     just sit there — they never auto-clear.
-// Classic Spiderette deal: columns 0-3 get 5 cards, columns 4-9 get
-// 4 cards (44 dealt, top card face up), remaining 8 cards form a
-// single stock that deals one face-up card onto the first 8 columns
-// (there's no second stock round — that's what makes it Spiderette
-// rather than full Spider).
+//     unbroken King-to-Ace run of the SAME COLOUR (red or black —
+//     so e.g. hearts and diamonds can mix in one clearing run, same
+//     for clubs and spades). Mixed-colour runs can be freely built
+//     and rearranged, but they just sit there — they never auto-clear.
+//
+// DEAL: triangular deal across the 7 columns — column 1 gets 1 card,
+// column 2 gets 2, ... column 7 gets 7 (1+2+3+4+5+6+7 = 28 cards
+// dealt, top card of each pile face up). The remaining 24 cards form
+// the stock, dealt out in 4 "waves" of 7, 7, 7, then 3 cards (the
+// last wave only reaches the first 3 columns, since there are only
+// 3 cards left) — every column must be non-empty before a wave can
+// be dealt, same rule as classic Spider(ette).
+//
+// STOCK REMOVAL: as soon as the FIRST same-colour King-to-Ace run
+// clears (regardless of how many stock cards/waves are left), the
+// stock is removed from play entirely — no more waves can be dealt
+// for the rest of the game.
+//
+// WINNING: the game ends, with a winning screen, once all 4
+// same-colour King-to-Ace sequences have been cleared (the entire
+// deck swept off the board).
+//
+// DOUBLE-CLICK: double-clicking a movable card/run auto-moves it to
+// the best legal destination. It first looks for a destination pile
+// whose top card matches by COLOUR (red/black) one rank higher; if
+// none exists, it falls back to the first legal destination
+// regardless of colour (matching the relaxed single-click rule). An
+// empty column is used only if no non-empty destination is legal.
 //
 // CARDS: same image set/quirks as blackjack.js (ace of spades and
 // all face cards have a trailing "2" in their filename) — see
@@ -38,15 +58,22 @@ import { siteRootUrl } from './utils.js';
 import { siteConfig } from '../config.js';
 
 const AUTH_STORAGE_KEY = 'spideretteAuth';
-const COLUMN_COUNT = 10;
-const FIVE_CARD_COLUMNS = 4; // columns 0-3 start with 5 cards, the rest with 4
+const COLUMN_COUNT = 7;
+const STOCK_WAVE_SIZES = [7, 7, 7, 3]; // 4 waves, last one only reaches columns 0-2
 const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'];
+const RED_SUITS = new Set(['hearts', 'diamonds']);
 const RANKS = ['ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king'];
 const SPECIAL_RANKS = new Set(['ace', 'jack', 'queen', 'king', 'joker']);
+const TOTAL_SEQUENCES = 4; // whole deck = 4 King-to-Ace runs
 
 /** Ace-low rank index (ace=1 ... king=13) — sequences run King down to Ace. */
 function rankIndex(rank) {
   return RANKS.indexOf(rank) + 1;
+}
+
+/** 'red' or 'black' for a suit. */
+function cardColour(suit) {
+  return RED_SUITS.has(suit) ? 'red' : 'black';
 }
 
 /** Resolves a card to its image filename — identical quirks to blackjack.js's cardImageFile(). */
@@ -101,13 +128,18 @@ export function initSpiderette() {
   const completedEl = document.getElementById('spiCompleted');
   const boardEl = document.getElementById('spiBoard');
   const newGameBtn = document.getElementById('spiNewGame');
+  const winOverlay = document.getElementById('spiWinOverlay');
+  const winPlayAgainBtn = document.getElementById('spiWinPlayAgain');
 
   // ---- state ----
   let auth = null; // { token, who, exp } | null
   let stock = [];
-  let columns = []; // 10 arrays of { rank, suit, faceUp }
-  let completedSuits = []; // suits fully cleared this game
+  let stockWaveIndex = 0; // how many waves have been dealt so far
+  let columns = []; // 7 arrays of { rank, suit, faceUp }
+  let completedColours = []; // ['red' | 'black', ...] cleared this game
   let selection = null; // { col, index } | null
+  let stockRemoved = false; // true once the stock is pulled from play
+  let gameOver = false;
 
   function isLoggedIn() {
     return Boolean(auth);
@@ -203,17 +235,24 @@ export function initSpiderette() {
   function dealNewGame() {
     const deck = buildShuffledDeck();
     columns = [];
+    // Triangular deal: column i (0-indexed) gets i+1 cards.
     for (let col = 0; col < COLUMN_COUNT; col++) {
-      const count = col < FIVE_CARD_COLUMNS ? 5 : 4;
+      const count = col + 1;
       const pile = deck.splice(0, count);
       pile[pile.length - 1].faceUp = true;
       columns.push(pile);
     }
-    stock = deck; // whatever's left (8 cards in a single 52-card deck)
-    completedSuits = [];
+    stock = deck; // remaining 24 cards, dealt out in waves of 7/7/7/3
+    stockWaveIndex = 0;
+    completedColours = [];
     selection = null;
-    setStatus('Sleep geen kaarten — klik een kaart om te kiezen, klik een stapel om ’m neer te leggen, of dubbelklik een kaart voor een automatische zet.');
+    stockRemoved = false;
+    gameOver = false;
+    hideWinOverlay();
+    setStatus('Klik een kaart om te kiezen, klik een stapel om ‘m neer te leggen. Dubbelklik voor een automatische zet.');
     renderBoard();
+    renderCompleted();
+    renderStock();
   }
 
   // -----------------------------------------------------------------
@@ -241,138 +280,73 @@ export function initSpiderette() {
     return rankIndex(destTop.rank) === rankIndex(movingCard.rank) + 1;
   }
 
-  /** After any tableau change: sweep away a pile's top run if — and only if — it's a full, same-suit King-to-Ace sequence. Mixed-suit runs (the relaxed-placement kind) are left exactly where they are. */
+  /** Same as canDrop, but also requires the destination top card to match the moving card's COLOUR. */
+  function canDropSameColour(fromCol, fromIndex, toCol) {
+    if (!canDrop(fromCol, fromIndex, toCol)) return false;
+    const destPile = columns[toCol];
+    if (destPile.length === 0) return false; // "same colour" needs an actual card to match against
+    const movingCard = columns[fromCol][fromIndex];
+    const destTop = destPile[destPile.length - 1];
+    return cardColour(destTop.suit) === cardColour(movingCard.suit);
+  }
+
+  /** After any tableau change: sweep away a pile's top run if — and only if — it's a full, same-COLOUR King-to-Ace sequence. Mixed-colour runs (the relaxed-placement kind) are left exactly where they are. */
   function sweepCompletedSequences() {
     let sweptAny = false;
     for (let col = 0; col < COLUMN_COUNT; col++) {
       const pile = columns[col];
       if (pile.length < 13) continue;
       const top13 = pile.slice(pile.length - 13);
-      const sameSuit = top13.every((card) => card.suit === top13[0].suit);
+      const sameColour = top13.every((card) => cardColour(card.suit) === cardColour(top13[0].suit));
       const isFullRun = top13.every((card, i) => i === 0 || rankIndex(top13[i - 1].rank) === rankIndex(card.rank) + 1);
       const isKingHigh = rankIndex(top13[0].rank) === 13;
-      if (sameSuit && isFullRun && isKingHigh) {
+      if (sameColour && isFullRun && isKingHigh) {
         columns[col] = pile.slice(0, pile.length - 13);
         if (columns[col].length) columns[col][columns[col].length - 1].faceUp = true;
-        completedSuits.push(top13[0].suit);
+        completedColours.push(cardColour(top13[0].suit));
         sweptAny = true;
       }
     }
     if (sweptAny) {
+      // Stock is removed from play the moment the first sequence clears,
+      // no matter how many cards/waves are still left in it.
+      if (!stockRemoved) {
+        stockRemoved = true;
+        stock = [];
+      }
       renderCompleted();
-      if (completedSuits.length >= 4) {
+      renderStock();
+      if (completedColours.length >= TOTAL_SEQUENCES) {
         setStatus('Alle vier de reeksen compleet — gewonnen! 🎉');
+        triggerWin();
       } else {
-        setStatus(`Reeks compleet! Nog ${4 - completedSuits.length} te gaan.`);
+        setStatus(`Reeks compleet! De stok is nu weg. Nog ${TOTAL_SEQUENCES - completedColours.length} te gaan.`);
       }
     }
     return sweptAny;
   }
 
-  /**
-   * Picks the most logical destination column for the run starting at
-   * columns[fromCol][fromIndex], for double-click auto-move. Considers
-   * every other column that's a legal drop (canDrop) and ranks them:
-   *   1. Same suit as the moving run's top card AND itself part of a
-   *      same-suit descending run already — extends a "real" Spider
-   *      sequence, the single most useful kind of move.
-   *   2. Any other same-suit landing spot (keeps future clearing alive
-   *      even if the destination pile isn't a pure run itself).
-   *   3. Any other legal same-rank-down landing spot, regardless of suit.
-   *   4. An empty column — always legal, but the least informative
-   *      move, so only used when nothing better exists.
-   * Within a tier, prefers the column that would flip a face-down card
-   * (shortest pile with a hidden card on top gets uncovered), since
-   * that's the single most useful side-effect a move can have.
-   */
-  function findBestDestination(fromCol, fromIndex) {
-    const movingCard = columns[fromCol][fromIndex];
-    const candidates = [];
-
-    for (let toCol = 0; toCol < COLUMN_COUNT; toCol++) {
-      if (!canDrop(fromCol, fromIndex, toCol)) continue;
-      const destPile = columns[toCol];
-
-      let tier;
-      if (destPile.length === 0) {
-        tier = 4; // empty column: legal, but last resort
-      } else {
-        const destTop = destPile[destPile.length - 1];
-        const sameSuit = destTop.suit === movingCard.suit;
-        if (sameSuit) {
-          // Is the destination pile itself currently a same-suit
-          // descending run all the way down? If so this move grows an
-          // actual clearable sequence, not just a mixed-suit stack.
-          let destIsRun = true;
-          for (let i = 1; i < destPile.length; i++) {
-            if (destPile[i].suit !== destPile[0].suit
-              || rankIndex(destPile[i - 1].rank) !== rankIndex(destPile[i].rank) + 1) {
-              destIsRun = false;
-              break;
-            }
-          }
-          tier = destIsRun ? 1 : 2;
-        } else {
-          tier = 3;
-        }
-      }
-
-      // Secondary preference: does this move reveal a face-down card
-      // in the source pile? (Always true here since fromIndex only
-      // moves whole runs off the top, so this only varies by whether
-      // the source pile becomes empty/has a hidden card underneath —
-      // kept simple: prefer whichever destination pile is shortest,
-      // which tends to keep columns balanced and open for stock deals.)
-      candidates.push({ toCol, tier, destLength: destPile.length });
-    }
-
-    if (candidates.length === 0) return -1;
-
-    candidates.sort((a, b) => a.tier - b.tier || a.destLength - b.destLength);
-    return candidates[0].toCol;
-  }
-
-  /** Double-click / double-tap on a card: auto-move its run to the most logical column instead of requiring two clicks. */
-  function handleCardDoubleClick(col, index) {
-    const pile = columns[col];
-    const card = pile[index];
-    if (!card.faceUp) return;
-    if (!isMovableRun(col, index)) return;
-
-    const bestCol = findBestDestination(col, index);
-    if (bestCol === -1) {
-      setStatus('Geen geldige zet voor deze kaart.');
-      return;
-    }
-
+  // -----------------------------------------------------------------
+  // WIN / GAME OVER
+  // -----------------------------------------------------------------
+  function triggerWin() {
+    gameOver = true;
     selection = null;
-    attemptMove(col, index, bestCol);
+    showWinOverlay();
   }
 
-  // Manual double-click detection: renderBoard() rebuilds every card's
-  // DOM node on each click (selection highlight, etc.), so the browser's
-  // native dblclick — which requires both clicks to land on the same
-  // still-attached element — can't be relied on. Track "same card,
-  // within N ms" ourselves instead.
-  const DOUBLE_CLICK_MS = 350;
-  let lastClick = null; // { col, index, time } | null
-
-  function isDoubleClick(col, index) {
-    const now = Date.now();
-    const isDouble = Boolean(
-      lastClick
-      && lastClick.col === col
-      && lastClick.index === index
-      && now - lastClick.time < DOUBLE_CLICK_MS,
-    );
-    lastClick = isDouble ? null : { col, index, time: now };
-    return isDouble;
+  function showWinOverlay() {
+    if (winOverlay) winOverlay.classList.remove('hidden');
   }
 
+  function hideWinOverlay() {
+    if (winOverlay) winOverlay.classList.add('hidden');
+  }
 
   // -----------------------------------------------------------------
-  // INTERACTION (click-to-select, click-to-drop — no drag-and-drop,
-  // so it works the same on touch and mouse)
+  // INTERACTION (click-to-select, click-to-drop, double-click to
+  // auto-move — no drag-and-drop, so it works the same on touch and
+  // mouse)
   // -----------------------------------------------------------------
   function clearSelection() {
     selection = null;
@@ -380,18 +354,10 @@ export function initSpiderette() {
   }
 
   function handleCardClick(col, index) {
+    if (gameOver) return;
     const pile = columns[col];
     const card = pile[index];
     if (!card.faceUp) return; // face-down cards aren't interactive
-
-    // Double-click always means "auto-move this card" — takes priority
-    // even if a different card was already selected, so a double-click
-    // never gets swallowed as "move the old selection here" instead.
-    if (isDoubleClick(col, index)) {
-      selection = null;
-      handleCardDoubleClick(col, index);
-      return;
-    }
 
     if (selection && selection.col === col && selection.index === index) {
       clearSelection();
@@ -409,7 +375,55 @@ export function initSpiderette() {
     }
   }
 
+  /** Double-click: auto-move the run to the best legal destination.
+   *  Tries a same-COLOUR destination first (matching the request that
+   *  double-click should prefer colour matches), then falls back to
+   *  any legal destination (relaxed placement), preferring a
+   *  non-empty pile over an empty column either way. */
+  function handleCardDoubleClick(col, index) {
+    if (gameOver) return;
+    const card = columns[col][index];
+    if (!card.faceUp || !isMovableRun(col, index)) return;
+
+    selection = null;
+
+    let target = findBestDestination(col, index, true); // same-colour pass
+    if (target === null) target = findBestDestination(col, index, false); // any-colour pass
+
+    if (target === null) {
+      setStatus('Geen geldige zet gevonden voor deze kaart.');
+      renderBoard();
+      return;
+    }
+
+    attemptMove(col, index, target);
+  }
+
+  /** Finds a destination column for the run at (fromCol, fromIndex).
+   *  requireSameColour=true only considers destinations whose top card
+   *  matches the moving card's colour; non-empty destinations are
+   *  preferred over empty columns in both passes. */
+  function findBestDestination(fromCol, fromIndex, requireSameColour) {
+    let emptyFallback = null;
+    for (let toCol = 0; toCol < COLUMN_COUNT; toCol++) {
+      if (toCol === fromCol) continue;
+      const destPile = columns[toCol];
+      if (destPile.length === 0) {
+        if (!requireSameColour && emptyFallback === null && canDrop(fromCol, fromIndex, toCol)) {
+          emptyFallback = toCol;
+        }
+        continue;
+      }
+      const isLegal = requireSameColour
+        ? canDropSameColour(fromCol, fromIndex, toCol)
+        : canDrop(fromCol, fromIndex, toCol);
+      if (isLegal) return toCol;
+    }
+    return emptyFallback;
+  }
+
   function handleColumnClick(col) {
+    if (gameOver) return;
     if (!selection) return;
     attemptMove(selection.col, selection.index, col);
   }
@@ -428,25 +442,30 @@ export function initSpiderette() {
 
     selection = null;
     const won = sweepCompletedSequences();
-    if (!won) setStatus('Sleep geen kaarten — klik een kaart om te kiezen, klik een stapel om ’m neer te leggen, of dubbelklik een kaart voor een automatische zet.');
+    if (!won && !gameOver) {
+      setStatus('Klik een kaart om te kiezen, klik een stapel om ‘m neer te leggen. Dubbelklik voor een automatische zet.');
+    }
     renderBoard();
   }
 
   function dealFromStock() {
-    if (stock.length === 0) return;
+    if (gameOver || stockRemoved || stock.length === 0) return;
     if (columns.some((pile) => pile.length === 0)) {
       setStatus('Vul eerst elke lege stapel voordat je nieuwe kaarten deelt.');
       return;
     }
-    const dealCount = Math.min(stock.length, COLUMN_COUNT);
+    const waveSize = STOCK_WAVE_SIZES[stockWaveIndex] ?? stock.length;
+    const dealCount = Math.min(stock.length, waveSize, COLUMN_COUNT);
     for (let col = 0; col < dealCount; col++) {
       const card = stock.shift();
       card.faceUp = true;
       columns[col].push(card);
     }
+    stockWaveIndex += 1;
     selection = null;
     sweepCompletedSequences();
     renderBoard();
+    renderStock();
   }
 
   // -----------------------------------------------------------------
@@ -486,6 +505,11 @@ export function initSpiderette() {
       handleCardClick(col, index);
     });
 
+    el.addEventListener('dblclick', (event) => {
+      event.stopPropagation();
+      handleCardDoubleClick(col, index);
+    });
+
     return el;
   }
 
@@ -502,15 +526,20 @@ export function initSpiderette() {
 
       boardEl.appendChild(colEl);
     });
+  }
 
+  function renderStock() {
     stockCountEl.textContent = String(stock.length);
-    stockEl.classList.toggle('spi-stock-empty', stock.length === 0);
+    stockEl.classList.toggle('spi-stock-empty', stock.length === 0 || stockRemoved);
+    // Once cleared, the stock/staple is removed from play entirely.
+    stockEl.classList.toggle('spi-stock-removed', stockRemoved);
+    stockEl.disabled = stockRemoved || stock.length === 0;
   }
 
   function renderCompleted() {
-    completedEl.innerHTML = completedSuits.map((suit) => {
-      const card = { rank: 'king', suit };
-      return `<img src="${cardImageUrl(card, isLoggedIn())}" alt="Complete reeks ${suit}" class="spi-completed-img">`;
+    completedEl.innerHTML = completedColours.map((colour) => {
+      const card = { rank: 'king', suit: colour === 'red' ? 'hearts' : 'spades' };
+      return `<img src="${cardImageUrl(card, isLoggedIn())}" alt="Complete reeks (${colour === 'red' ? 'rood' : 'zwart'})" class="spi-completed-img">`;
     }).join('');
   }
 
@@ -519,6 +548,7 @@ export function initSpiderette() {
   // -----------------------------------------------------------------
   stockEl.addEventListener('click', dealFromStock);
   newGameBtn.addEventListener('click', dealNewGame);
+  if (winPlayAgainBtn) winPlayAgainBtn.addEventListener('click', dealNewGame);
 
   showLoginBtn.addEventListener('click', showLoginForm);
   cancelLoginBtn.addEventListener('click', hideLoginForm);

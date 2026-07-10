@@ -102,6 +102,18 @@
   pointer-events: none;
 }
 
+/* Stock/staple removed from play entirely — happens the moment the
+   first same-colour King-to-Ace run clears (see spiderette.js). Kept
+   visually distinct from "temporarily empty" (spi-stock-empty) so
+   the player understands it's gone for good this game, not just
+   waiting on the tableau to fill back up. */
+.spi-stock-removed {
+  cursor: not-allowed;
+  opacity: 0.2;
+  pointer-events: none;
+  filter: grayscale(1);
+}
+
 .spi-stock-img {
   width: 64px;
   height: auto;
@@ -150,8 +162,8 @@
 
 .spi-column {
   position: relative;
-  width: clamp(40px, 8vw, 64px);
-  min-height: 420px;
+  width: clamp(56px, 12vw, 92px);
+  min-height: 460px;
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--color-surface) 60%, transparent);
 }
@@ -197,4 +209,50 @@
   .spi-completed-img {
     width: 34px;
   }
+}
+
+/* == WINNING SCREEN ==
+   Full-viewport overlay shown once all 4 same-colour King-to-Ace
+   sequences are cleared. .hidden (utilities.css) toggles visibility
+   from spiderette.js. */
+.spi-win-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  background: color-mix(in srgb, black 55%, transparent);
+  backdrop-filter: blur(3px);
+}
+
+.spi-win-card {
+  width: min(100%, 420px);
+  text-align: center;
+  padding: var(--space-6);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+  animation: spi-win-pop 0.35s ease-out;
+}
+
+.spi-win-emoji {
+  font-size: 2.75rem;
+  margin-bottom: var(--space-2);
+}
+
+.spi-win-card h2 {
+  font-family: var(--font-display);
+  margin-bottom: var(--space-3);
+}
+
+.spi-win-card p:not(.spi-win-emoji) {
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-5);
+}
+
+@keyframes spi-win-pop {
+  0%   { opacity: 0; transform: scale(0.9) translateY(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
 }

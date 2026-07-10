@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <!--
   SPIDERETTE PAGE
-  Single-deck patience game, 10 tableau columns. This is the
+  Single-deck patience game, 7 tableau columns (triangular deal: 1
+  card in column 1 up to 7 cards in column 7). This is the
   RELAXED-PLACEMENT variant: any card can be placed on any other card
   one rank higher, regardless of suit/colour — but only a full,
-  same-suit King-to-Ace run ever clears off the board. Logic lives in
-  assets/js/modules/spiderette.js — this file only contains the
+  same-COLOUR King-to-Ace run ever clears off the board, and doing so
+  removes the stock/staple from play for the rest of the game. Ends
+  with a winning screen once all 4 sequences are cleared. Logic lives
+  in assets/js/modules/spiderette.js — this file only contains the
   layout + (optional) login form, same "one script, guarded init
   function" pattern as every other game page (see blackjack.html for
   the near-identical login-bar structure).
@@ -25,7 +28,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="description" content="Spiderette: los alle vier de reeksen op, met een klik-en-leg patience-bord.">
+  <meta name="description" content="Spiderette: los alle vier de kleurreeksen op, met een klik-en-leg patience-bord van 7 kolommen.">
   <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
 
@@ -56,7 +59,7 @@
     <section id="hero" class="hero">
       <div class="container">
         <h1>🕷️ Spiderette</h1>
-        <p>Leg elke kaart op een kaart van precies één hoger, ongeacht de kleur — maar alleen een volledige reeks van dezelfde soort (Heer t/m Aas) verdwijnt van het bord.</p>
+        <p>Leg elke kaart op een kaart van precies één hoger, ongeacht de kleur — maar alleen een volledige reeks van dezelfde kleur (Heer t/m Aas) verdwijnt van het bord. Dubbelklik voor een automatische zet.</p>
       </div>
     </section>
 
@@ -87,8 +90,11 @@
 
       <p id="spiStatus" class="ttt-status" aria-live="polite"></p>
 
-      <!-- Stock (click to deal one card onto each of the first 8
-           columns) + the completed-sequence tray. -->
+      <!-- Stock (click to deal a wave of cards onto the columns, one
+           card per column, 7/7/7/3 across 4 waves — see
+           spiderette.js) + the completed-sequence tray. Once the
+           first same-colour King-to-Ace run clears, this stock is
+           removed from play for the rest of the game. -->
       <div class="spi-top-row">
         <button id="spiStock" type="button" class="spi-stock" aria-label="Deel kaarten van de stok">
           <img src="../assets/icons/playing-cards/card-back-blue.png" alt="" class="spi-stock-img">
@@ -103,6 +109,17 @@
 
       <div class="ttt-actions">
         <button id="spiNewGame" class="btn btn-primary" type="button">Nieuw spel</button>
+      </div>
+
+      <!-- Winning screen: hidden by default, shown once all 4
+           same-colour King-to-Ace sequences are cleared. -->
+      <div id="spiWinOverlay" class="spi-win-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="spiWinTitle">
+        <div class="spi-win-card">
+          <p class="spi-win-emoji" aria-hidden="true">🕷️🎉</p>
+          <h2 id="spiWinTitle">Gewonnen!</h2>
+          <p>Alle vier de reeksen zijn compleet. Goed gespeeld!</p>
+          <button id="spiWinPlayAgain" class="btn btn-primary" type="button">Nog een keer spelen</button>
+        </div>
       </div>
     </section>
   </main>

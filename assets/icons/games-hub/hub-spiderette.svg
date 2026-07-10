@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Spin">
+  <g stroke="#222222" stroke-width="5" stroke-linecap="round" fill="none">
+    <line x1="50" y1="45" x2="18" y2="25"/>
+    <line x1="50" y1="50" x2="14" y2="45"/>
+    <line x1="50" y1="55" x2="18" y2="70"/>
+    <line x1="50" y1="60" x2="26" y2="85"/>
+    <line x1="50" y1="45" x2="82" y2="25"/>
+    <line x1="50" y1="50" x2="86" y2="45"/>
+    <line x1="50" y1="55" x2="82" y2="70"/>
+    <line x1="50" y1="60" x2="74" y2="85"/>
+  </g>
+  <ellipse cx="50" cy="42" rx="16" ry="14" fill="#222222"/>
+  <ellipse cx="50" cy="64" rx="22" ry="20" fill="#222222"/>
+</svg>

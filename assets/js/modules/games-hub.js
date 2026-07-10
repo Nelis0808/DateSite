@@ -10,59 +10,64 @@
 
 import { escapeHtml, siteRootUrl } from './utils.js';
 
+// Every icon below is a flat, border-free custom SVG (assets/icons/games-hub/)
+// instead of a raw emoji character. Emoji glyphs render with a black outline
+// in several system emoji fonts (Windows/Segoe UI Emoji in particular) —
+// swapping them all for our own flat-colour SVGs (same style as the pink
+// circle already used here) keeps every card icon border-free and consistent.
 const games = [
   {
     title: 'Boter, Kaas & Eieren',
     description: 'Het klassieke tic-tac-toe. Speel zo vaak als je wilt, terug-en-weer.',
     href: 'games/tictactoe.html',
-    emoji: '❌⭕',
+    emoji: `<img src="${siteRootUrl('assets/icons/games-hub/hub-tictactoe-x.svg')}" alt="" class="emoji-icon"><img src="${siteRootUrl('assets/icons/games-hub/hub-tictactoe-o.svg')}" alt="" class="emoji-icon">`,
     status: 'available',
   },
   {
     title: 'Vier op een Rij',
     description: 'Wie krijgt er als eerste vier schijven op een rij?',
     href: 'games/connect4.html',
-    emoji: `🔵<img src="${siteRootUrl('assets/icons/player-pink.svg')}" alt="" class="emoji-icon">`,
+    emoji: `<img src="${siteRootUrl('assets/icons/games-hub/hub-connect4-blue.svg')}" alt="" class="emoji-icon"><img src="${siteRootUrl('assets/icons/player-pink.svg')}" alt="" class="emoji-icon">`,
     status: 'available',
   },
   {
     title: 'Wordle',
     description: 'Raad het Engelse woord. Kies zelf hoeveel letters (4 t/m 10).',
     href: 'games/wordle.html',
-    emoji: '🟩🟨',
+    emoji: `<img src="${siteRootUrl('assets/icons/games-hub/hub-wordle.svg')}" alt="" class="emoji-icon">`,
     status: 'available',
   },
   {
     title: 'Galgje',
     description: 'Raad het woord voordat het poppetje af is.',
     href: 'games/hangman.html',
-    emoji: '✏️',
+    emoji: `<img src="${siteRootUrl('assets/icons/games-hub/hub-hangman.svg')}" alt="" class="emoji-icon">`,
     status: 'available',
   },
   {
     title: 'BlackJack',
     description: 'Kom zo dicht mogelijk bij 21. Speel gratis als gast, of log in voor een opgeslagen chipsaldo.',
     href: 'games/blackjack.html',
-    emoji: '🃏',
+    emoji: `<img src="${siteRootUrl('assets/icons/games-hub/hub-blackjack.svg')}" alt="" class="emoji-icon">`,
     status: 'available',
   },
   {
     title: 'Spiderette',
-    description: 'Los alle vier de reeksen op. Kaarten mogen op elke kleur, maar alleen een complete reeks van dezelfde soort telt.',
+    description: 'Los alle vier de reeksen op. Kaarten mogen op elke kleur, maar alleen een complete reeks van dezelfde kleur telt.',
     href: 'games/spiderette.html',
-    emoji: '🕷️',
+    emoji: `<img src="${siteRootUrl('assets/icons/games-hub/hub-spiderette.svg')}" alt="" class="emoji-icon">`,
     status: 'available',
   },
   {
     title: 'Geheugenspel',
     description: 'Draai de kaartjes om en vind alle paren.',
-    emoji: '🧠',
+    emoji: `<img src="${siteRootUrl('assets/icons/games-hub/hub-memory.svg')}" alt="" class="emoji-icon">`,
     status: 'coming-soon',
   },
   {
     title: 'Quiz',
     description: 'Test elkaar met leuke weetjes en vragen.',
-    emoji: '❓',
+    emoji: `<img src="${siteRootUrl('assets/icons/games-hub/hub-quiz.svg')}" alt="" class="emoji-icon">`,
     status: 'coming-soon',
   },
 ];
