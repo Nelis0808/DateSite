@@ -155,4 +155,17 @@ export const siteConfig = {
       b: 'Kalina',
     },
   },
+
+  // Config for Spiderette's optional login (assets/js/modules/spiderette.js).
+  // Unlike BlackJack there's no balance to save here — logging in only
+  // switches to the "special" card art (aces/faces) — so this simply
+  // reuses the same BlackJack Worker's /login endpoint (same
+  // passphrases, independent session/localStorage key though).
+  spiderette: {
+    workerUrl: 'https://blackjack.niels-luijten7.workers.dev',
+    personLabels: {
+      a: 'Niels',
+      b: 'Kalina',
+    },
+  },
 };

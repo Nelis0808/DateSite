@@ -1,0 +1,200 @@
+/* =============================================================
+   PAGE: SPIDERETTE (games/spiderette.html)
+   Reuses shared #spiApp centering + .ttt-status/.ttt-actions from
+   games.css. Auth-bar structure mirrors blackjack.css (same login
+   flow, no balance here — see spiderette.js file header), so the
+   two files intentionally look similar.
+   ============================================================= */
+
+#spiApp {
+  width: min(95%, 900px);
+  margin-inline: auto;
+  text-align: center;
+}
+
+/* == LOCAL UTILITIES == */
+.spi-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.spi-btn-sm {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-sm);
+}
+
+/* == AUTH BAR == */
+.spi-auth-bar {
+  margin-bottom: var(--space-5);
+}
+
+.spi-auth-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.spi-login-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.spi-login-form input {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.spi-login-error {
+  min-height: 1.25em;
+  font-size: var(--fs-sm);
+  color: var(--color-danger);
+  margin-top: var(--space-2);
+}
+
+/* == STOCK + COMPLETED TRAY == */
+.spi-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.spi-stock {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: transform var(--transition-fast);
+}
+
+.spi-stock:hover {
+  transform: translateY(-2px);
+}
+
+.spi-stock-empty {
+  cursor: default;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.spi-stock-img {
+  width: 64px;
+  height: auto;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.spi-stock-count {
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 var(--space-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-white);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.spi-completed {
+  display: flex;
+  gap: var(--space-2);
+  min-height: 60px;
+  align-items: center;
+}
+
+.spi-completed-img {
+  width: 44px;
+  height: auto;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+/* == TABLEAU == */
+.spi-board {
+  display: flex;
+  justify-content: center;
+  gap: clamp(4px, 1.2vw, var(--space-3));
+  margin-bottom: var(--space-6);
+}
+
+.spi-column {
+  position: relative;
+  width: clamp(40px, 8vw, 64px);
+  min-height: 420px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface) 60%, transparent);
+}
+
+.spi-card {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  cursor: pointer;
+  transition: transform var(--transition-fast);
+}
+
+.spi-card-img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  display: block;
+}
+
+.spi-card-selected {
+  transform: translateY(-10px);
+}
+
+.spi-card-selected .spi-card-img {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+@media (max-width: 640px) {
+  .spi-board {
+    gap: 3px;
+  }
+
+  .spi-column {
+    min-height: 320px;
+  }
+
+  .spi-stock-img {
+    width: 48px;
+  }
+
+  .spi-completed-img {
+    width: 34px;
+  }
+}

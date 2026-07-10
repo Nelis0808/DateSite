@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<!--
+  SPIDERETTE PAGE
+  Single-deck patience game, 10 tableau columns. This is the
+  RELAXED-PLACEMENT variant: any card can be placed on any other card
+  one rank higher, regardless of suit/colour — but only a full,
+  same-suit King-to-Ace run ever clears off the board. Logic lives in
+  assets/js/modules/spiderette.js — this file only contains the
+  layout + (optional) login form, same "one script, guarded init
+  function" pattern as every other game page (see blackjack.html for
+  the near-identical login-bar structure).
+
+  LOGIN IS OPTIONAL: there's no balance to save here, so logging in
+  (same passphrase-based system as BlackJack/the photo gallery) only
+  unlocks the "special" card face variant (assets/icons/playing-cards/
+  special-cards/) for aces, faces, and jokers — number cards look the
+  same either way.
+
+  Lives in the games/ subfolder, same relative-path rules as the
+  other game pages (see tictactoe.html's comment for details).
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Spiderette: los alle vier de reeksen op, met een klik-en-leg patience-bord.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>Spiderette</title>
+
+  <link rel="icon" href="../assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/pages/games.css">
+  <link rel="stylesheet" href="../assets/css/pages/spiderette.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om te kunnen spelen.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>🕷️ Spiderette</h1>
+        <p>Leg elke kaart op een kaart van precies één hoger, ongeacht de kleur — maar alleen een volledige reeks van dezelfde soort (Heer t/m Aas) verdwijnt van het bord.</p>
+      </div>
+    </section>
+
+    <section class="container" id="spiApp">
+      <a href="../games-hub.html" class="btn btn-outline ttt-back">&larr; Terug naar Games</a>
+
+      <!-- Login bar: guest by default, optional login for the
+           "special" card art only — see file header. -->
+      <div id="spiAuthBar" class="spi-auth-bar">
+        <div id="spiGuestBadge" class="spi-auth-status">
+          🕶️ Je speelt als gast.
+          <button id="spiShowLogin" class="btn btn-outline spi-btn-sm" type="button">Inloggen</button>
+        </div>
+
+        <div id="spiLoggedInBadge" class="spi-auth-status hidden">
+          ✅ Ingelogd als <span id="spiWhoLabel"></span>.
+          <button id="spiLogoutBtn" class="btn btn-outline spi-btn-sm" type="button">Uitloggen</button>
+        </div>
+
+        <form id="spiLoginForm" class="spi-login-form hidden">
+          <label for="spiPassphrase" class="spi-sr-only">Wachtwoord</label>
+          <input id="spiPassphrase" type="password" placeholder="Wachtwoord" autocomplete="current-password" required>
+          <button type="submit" class="btn btn-primary spi-btn-sm">Inloggen</button>
+          <button id="spiCancelLogin" type="button" class="btn btn-outline spi-btn-sm">Annuleren</button>
+        </form>
+        <p id="spiLoginError" class="spi-login-error" aria-live="polite"></p>
+      </div>
+
+      <p id="spiStatus" class="ttt-status" aria-live="polite"></p>
+
+      <!-- Stock (click to deal one card onto each of the first 8
+           columns) + the completed-sequence tray. -->
+      <div class="spi-top-row">
+        <button id="spiStock" type="button" class="spi-stock" aria-label="Deel kaarten van de stok">
+          <img src="../assets/icons/playing-cards/card-back-blue.png" alt="" class="spi-stock-img">
+          <span id="spiStockCount" class="spi-stock-count">0</span>
+        </button>
+
+        <div id="spiCompleted" class="spi-completed" aria-label="Voltooide reeksen"></div>
+      </div>
+
+      <!-- Tableau -->
+      <div id="spiBoard" class="spi-board"></div>
+
+      <div class="ttt-actions">
+        <button id="spiNewGame" class="btn btn-primary" type="button">Nieuw spel</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- <div data-include="chrome-end"></div> Commented out, same reason as connect4.html -->
+
+  <script type="module" src="../assets/js/main.js"></script>
+</body>
+</html>

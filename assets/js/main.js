@@ -47,6 +47,7 @@ import { initConnect4 } from './modules/connect4.js';
 import { initWordle } from './modules/wordle.js';
 import { initHangman } from './modules/hangman.js';
 import { initBlackjack } from './modules/blackjack.js';
+import { initSpiderette } from './modules/spiderette.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Load the shared header/back-to-top partials FIRST — every module
@@ -83,6 +84,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initWordle();        // wordle.html
   initHangman();       // hangman.html
   initBlackjack();     // games/blackjack.html
+  initSpiderette();    // games/spiderette.html
 
   console.log(`${document.title} — initialized ✅`);
 });

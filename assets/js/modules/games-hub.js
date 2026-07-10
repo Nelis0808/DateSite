@@ -47,6 +47,13 @@ const games = [
     status: 'available',
   },
   {
+    title: 'Spiderette',
+    description: 'Los alle vier de reeksen op. Kaarten mogen op elke kleur, maar alleen een complete reeks van dezelfde soort telt.',
+    href: 'games/spiderette.html',
+    emoji: '🕷️',
+    status: 'available',
+  },
+  {
     title: 'Geheugenspel',
     description: 'Draai de kaartjes om en vind alle paren.',
     emoji: '🧠',

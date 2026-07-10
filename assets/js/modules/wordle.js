@@ -209,6 +209,19 @@ export function initWordle() {
     }
   }
 
+  /** Persistent red border on every cell of the current row — stays put until the guess is edited (see clearInvalidRow), unlike the shake above, which is a one-off animation. */
+  function markRowInvalid() {
+    for (let col = 0; col < wordLength; col++) {
+      cellAt(guessRow, col).classList.add('wordle-cell-invalid');
+    }
+  }
+
+  function clearInvalidRow() {
+    for (let col = 0; col < wordLength; col++) {
+      cellAt(guessRow, col).classList.remove('wordle-cell-invalid');
+    }
+  }
+
   function keyEl(letter) {
     return keyboard.querySelector(`.wordle-key[data-key="${letter}"]`);
   }
@@ -221,8 +234,12 @@ export function initWordle() {
       return;
     }
     if (!validGuesses.has(currentGuess)) {
+      // Only reachable once the row is filled to wordLength (see the
+      // length check above), so this is exactly the "full row, unknown
+      // word" case — mark it with a red border, not just the shake.
       updateStatus('Onbekend woord — probeer een ander.');
       shakeCurrentRow();
+      markRowInvalid();
       return;
     }
 
@@ -276,11 +293,13 @@ export function initWordle() {
     }
     if (key === 'BACK') {
       currentGuess = currentGuess.slice(0, -1);
+      clearInvalidRow();
       updateCurrentRow();
       return;
     }
     if (currentGuess.length < wordLength) {
       currentGuess += key;
+      clearInvalidRow();
       updateCurrentRow();
     }
   }

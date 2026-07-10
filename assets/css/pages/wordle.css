@@ -92,6 +92,14 @@
   75% { transform: translateX(6px); }
 }
 
+/* Full-length guess that isn't a real word — a persistent red border,
+   not just the shake above. Stays until the row is edited again
+   (cleared in wordle.js's clearInvalidRow, called on BACK/next letter). */
+.wordle-cell-invalid {
+  border-color: var(--color-danger);
+  border-width: 2px;
+}
+
 .wordle-cell-reveal {
   animation: wordle-flip 0.5s ease forwards;
 }
