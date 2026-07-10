@@ -212,7 +212,7 @@ export function initSpiderette() {
     stock = deck; // whatever's left (8 cards in a single 52-card deck)
     completedSuits = [];
     selection = null;
-    setStatus('Sleep geen kaarten — klik een kaart om te kiezen, klik een stapel om ‘m neer te leggen.');
+    setStatus('Sleep geen kaarten — klik een kaart om te kiezen, klik een stapel om ’m neer te leggen, of dubbelklik een kaart voor een automatische zet.');
     renderBoard();
   }
 
@@ -269,6 +269,107 @@ export function initSpiderette() {
     return sweptAny;
   }
 
+  /**
+   * Picks the most logical destination column for the run starting at
+   * columns[fromCol][fromIndex], for double-click auto-move. Considers
+   * every other column that's a legal drop (canDrop) and ranks them:
+   *   1. Same suit as the moving run's top card AND itself part of a
+   *      same-suit descending run already — extends a "real" Spider
+   *      sequence, the single most useful kind of move.
+   *   2. Any other same-suit landing spot (keeps future clearing alive
+   *      even if the destination pile isn't a pure run itself).
+   *   3. Any other legal same-rank-down landing spot, regardless of suit.
+   *   4. An empty column — always legal, but the least informative
+   *      move, so only used when nothing better exists.
+   * Within a tier, prefers the column that would flip a face-down card
+   * (shortest pile with a hidden card on top gets uncovered), since
+   * that's the single most useful side-effect a move can have.
+   */
+  function findBestDestination(fromCol, fromIndex) {
+    const movingCard = columns[fromCol][fromIndex];
+    const candidates = [];
+
+    for (let toCol = 0; toCol < COLUMN_COUNT; toCol++) {
+      if (!canDrop(fromCol, fromIndex, toCol)) continue;
+      const destPile = columns[toCol];
+
+      let tier;
+      if (destPile.length === 0) {
+        tier = 4; // empty column: legal, but last resort
+      } else {
+        const destTop = destPile[destPile.length - 1];
+        const sameSuit = destTop.suit === movingCard.suit;
+        if (sameSuit) {
+          // Is the destination pile itself currently a same-suit
+          // descending run all the way down? If so this move grows an
+          // actual clearable sequence, not just a mixed-suit stack.
+          let destIsRun = true;
+          for (let i = 1; i < destPile.length; i++) {
+            if (destPile[i].suit !== destPile[0].suit
+              || rankIndex(destPile[i - 1].rank) !== rankIndex(destPile[i].rank) + 1) {
+              destIsRun = false;
+              break;
+            }
+          }
+          tier = destIsRun ? 1 : 2;
+        } else {
+          tier = 3;
+        }
+      }
+
+      // Secondary preference: does this move reveal a face-down card
+      // in the source pile? (Always true here since fromIndex only
+      // moves whole runs off the top, so this only varies by whether
+      // the source pile becomes empty/has a hidden card underneath —
+      // kept simple: prefer whichever destination pile is shortest,
+      // which tends to keep columns balanced and open for stock deals.)
+      candidates.push({ toCol, tier, destLength: destPile.length });
+    }
+
+    if (candidates.length === 0) return -1;
+
+    candidates.sort((a, b) => a.tier - b.tier || a.destLength - b.destLength);
+    return candidates[0].toCol;
+  }
+
+  /** Double-click / double-tap on a card: auto-move its run to the most logical column instead of requiring two clicks. */
+  function handleCardDoubleClick(col, index) {
+    const pile = columns[col];
+    const card = pile[index];
+    if (!card.faceUp) return;
+    if (!isMovableRun(col, index)) return;
+
+    const bestCol = findBestDestination(col, index);
+    if (bestCol === -1) {
+      setStatus('Geen geldige zet voor deze kaart.');
+      return;
+    }
+
+    selection = null;
+    attemptMove(col, index, bestCol);
+  }
+
+  // Manual double-click detection: renderBoard() rebuilds every card's
+  // DOM node on each click (selection highlight, etc.), so the browser's
+  // native dblclick — which requires both clicks to land on the same
+  // still-attached element — can't be relied on. Track "same card,
+  // within N ms" ourselves instead.
+  const DOUBLE_CLICK_MS = 350;
+  let lastClick = null; // { col, index, time } | null
+
+  function isDoubleClick(col, index) {
+    const now = Date.now();
+    const isDouble = Boolean(
+      lastClick
+      && lastClick.col === col
+      && lastClick.index === index
+      && now - lastClick.time < DOUBLE_CLICK_MS,
+    );
+    lastClick = isDouble ? null : { col, index, time: now };
+    return isDouble;
+  }
+
+
   // -----------------------------------------------------------------
   // INTERACTION (click-to-select, click-to-drop — no drag-and-drop,
   // so it works the same on touch and mouse)
@@ -282,6 +383,15 @@ export function initSpiderette() {
     const pile = columns[col];
     const card = pile[index];
     if (!card.faceUp) return; // face-down cards aren't interactive
+
+    // Double-click always means "auto-move this card" — takes priority
+    // even if a different card was already selected, so a double-click
+    // never gets swallowed as "move the old selection here" instead.
+    if (isDoubleClick(col, index)) {
+      selection = null;
+      handleCardDoubleClick(col, index);
+      return;
+    }
 
     if (selection && selection.col === col && selection.index === index) {
       clearSelection();
@@ -318,7 +428,7 @@ export function initSpiderette() {
 
     selection = null;
     const won = sweepCompletedSequences();
-    if (!won) setStatus('Sleep geen kaarten — klik een kaart om te kiezen, klik een stapel om ‘m neer te leggen.');
+    if (!won) setStatus('Sleep geen kaarten — klik een kaart om te kiezen, klik een stapel om ’m neer te leggen, of dubbelklik een kaart voor een automatische zet.');
     renderBoard();
   }
 

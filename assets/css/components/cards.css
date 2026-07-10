@@ -54,6 +54,13 @@
   font-size: 2.75rem;
   line-height: 1;
   margin-bottom: var(--space-4);
+  /* Force full-color emoji presentation instead of the default
+     monochrome/outlined "text style" glyphs some platforms fall
+     back to (which look like they have a dark border). */
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji', sans-serif;
+  font-variant-emoji: emoji;
+  -webkit-font-smoothing: antialiased;
 }
 
 .card h4 {

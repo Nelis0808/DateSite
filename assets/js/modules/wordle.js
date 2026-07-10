@@ -194,10 +194,16 @@ export function initWordle() {
   }
 
   function updateCurrentRow() {
+    // A full-length guess that isn't in the word list gets a red
+    // border right away — before Enter/submission — instead of only
+    // shaking/erroring out after the player presses Enter.
+    const isInvalid = currentGuess.length === wordLength && !validGuesses.has(currentGuess);
+
     for (let col = 0; col < wordLength; col++) {
       const cell = cellAt(guessRow, col);
       cell.textContent = currentGuess[col] || '';
       cell.classList.toggle('wordle-cell-filled', Boolean(currentGuess[col]));
+      cell.classList.toggle('wordle-cell-invalid', isInvalid);
     }
   }
 

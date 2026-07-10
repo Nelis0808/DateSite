@@ -82,6 +82,12 @@
   transform: scale(1.03);
 }
 
+/* Live feedback: the row is fully typed but isn't a word in the
+   list yet — shown before Enter/submission, not just after. */
+.wordle-cell-invalid {
+  border-color: var(--color-danger);
+}
+
 .wordle-cell-shake {
   animation: wordle-shake 0.3s ease;
 }
