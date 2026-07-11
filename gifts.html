@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<!--
+  GIFT IDEAS PAGE
+  Two synced columns of gift-idea links — Kalina left, Niels right.
+  Logic lives in assets/js/modules/gifts.js — this file only contains
+  the markup (status line, two columns, add-forms) that the module
+  fills in and wires up. Data (links/titles/notes) is stored in
+  Cloudflare KV via a small Worker, same pattern as
+  boodschappenlijst.html; that Worker also resolves each gift's
+  thumbnail (a manually-uploaded custom photo first, else it scrapes
+  the link's og:image) — see STAPPENPLAN-GIFTS.md.
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Cadeau-ideeën voor Kalina en Niels, samen bijgehouden.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>Cadeau Ideeën</title>
+
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/gifts.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om te werken.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>🎁 Cadeau Ideeën</h1>
+        <p>Zet een linkje klaar, wij zoeken er zelf een plaatje bij.</p>
+      </div>
+    </section>
+
+    <section class="container" id="giftsApp">
+      <!-- Shown instead of the app if config.js's workerUrl is still the placeholder -->
+      <div id="giftsConfigWarning" class="gf-config-warning hidden">
+        ⚠️ Nog geen Worker gekoppeld. Zie <strong>STAPPENPLAN-GIFTS.md</strong>
+        om deze pagina werkend te krijgen.
+      </div>
+
+      <p id="giftsStatus" class="gf-status" aria-live="polite">Laden…</p>
+
+      <div id="giftsColumns" class="gf-columns">
+        <!-- LEFT: Kalina (person "b") -->
+        <section class="gf-column" aria-labelledby="giftsColKalinaHeading">
+          <h2 id="giftsColKalinaHeading" class="gf-column-heading">🎀 Voor <span data-gifts-person-label="b">Kalina</span></h2>
+
+          <ul id="giftsListB" class="gf-list" aria-label="Cadeau-ideeën voor Kalina"></ul>
+          <div id="giftsEmptyB" class="empty-state hidden">Nog geen ideeën — voeg er hieronder een toe.</div>
+
+          <form id="giftsAddFormB" class="gf-add-form" data-person="b">
+            <input type="url" class="gf-add-url" placeholder="Link naar het cadeau…" maxlength="2000" required aria-label="Link naar het cadeau voor Kalina">
+            <input type="text" class="gf-add-title" placeholder="Titel (bv. \u2018Wandelschoenen\u2019)" maxlength="200" aria-label="Titel van het cadeau voor Kalina">
+            <input type="text" class="gf-add-note" placeholder="Notitie (optioneel)" maxlength="200" aria-label="Notitie bij het cadeau voor Kalina">
+            <button type="submit" class="btn btn-primary">Toevoegen</button>
+          </form>
+          <p class="gf-add-error" aria-live="polite"></p>
+        </section>
+
+        <!-- RIGHT: Niels (person "a") -->
+        <section class="gf-column" aria-labelledby="giftsColNielsHeading">
+          <h2 id="giftsColNielsHeading" class="gf-column-heading">🎁 Voor <span data-gifts-person-label="a">Niels</span></h2>
+
+          <ul id="giftsListA" class="gf-list" aria-label="Cadeau-ideeën voor Niels"></ul>
+          <div id="giftsEmptyA" class="empty-state hidden">Nog geen ideeën — voeg er hieronder een toe.</div>
+
+          <form id="giftsAddFormA" class="gf-add-form" data-person="a">
+            <input type="url" class="gf-add-url" placeholder="Link naar het cadeau…" maxlength="2000" required aria-label="Link naar het cadeau voor Niels">
+            <input type="text" class="gf-add-title" placeholder="Titel (bv. \u2018Wandelschoenen\u2019)" maxlength="200" aria-label="Titel van het cadeau voor Niels">
+            <input type="text" class="gf-add-note" placeholder="Notitie (optioneel)" maxlength="200" aria-label="Notitie bij het cadeau voor Niels">
+            <button type="submit" class="btn btn-primary">Toevoegen</button>
+          </form>
+          <p class="gf-add-error" aria-live="polite"></p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div data-include="chrome-end"></div>
+
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

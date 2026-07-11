@@ -73,6 +73,13 @@ export const siteConfig = {
       status: 'available',
     },
     {
+      title: 'Cadeau Ideeën',
+      description: 'Voor de volgende gelegenheid.',
+      href: 'gifts.html',
+      emoji: '🎁',
+      status: 'available',
+    },
+    {
       title: 'Bucket List',
       description: 'Dingen die we samen willen doen.',
       emoji: '📝',
@@ -94,12 +101,6 @@ export const siteConfig = {
       title: 'Speellijst',
       description: 'Onze muziek, samen gemaakt.',
       emoji: '🎵',
-      status: 'coming-soon',
-    },
-    {
-      title: 'Cadeau Ideeën',
-      description: 'Voor de volgende gelegenheid.',
-      emoji: '🎁',
       status: 'coming-soon',
     },
     {
@@ -144,6 +145,17 @@ export const siteConfig = {
   // STAPPENPLAN-BOODSCHAPPEN.md for usage.
   shoppingList: {
     workerUrl: 'https://boodschappenlijst.niels-luijten7.workers.dev',
+  },
+
+  // Config for the gift ideas lists (assets/js/modules/gifts.js).
+  // STAPPENPLAN-GIFTS.md for usage. No login (same as shoppingList
+  // above) — 'a' = Niels (right column), 'b' = Kalina (left column).
+  gifts: {
+    workerUrl: 'https://gifts.niels-luijten7.workers.dev',
+    personLabels: {
+      a: 'Niels',
+      b: 'Kalina',
+    },
   },
 
   // Config for BlackJack's optional login + saved chip balance
