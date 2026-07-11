@@ -163,8 +163,8 @@ export function initConnect4() {
 
   function playerLabel(player) {
     return player === 'B'
-      ? 'Blauw <img src="' + siteRootUrl('assets/icons/connect4/player-blue.svg') + '" alt="" class="emoji-icon">'
-      : 'Roze <img src="'  + siteRootUrl('assets/icons/connect4/player-pink.svg') + '" alt="" class="emoji-icon">';
+      ? 'Blauw <img src="' + siteRootUrl('assets/icons/connect4/player-blue.svg') + '" alt="blue" class="emoji-icon">'
+      : 'Roze <img src="'  + siteRootUrl('assets/icons/connect4/player-pink.svg') + '" alt=pink"" class="emoji-icon">';
   }
 
   // innerHTML (not textContent) because playerLabel() drops in a
