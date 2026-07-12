@@ -74,11 +74,12 @@ export function initWallz() {
   const scoreP2El = qs('#wallzScoreP2', root);
   const wallsP1El = qs('#wallzWallsP1', root);
   const wallsP2El = qs('#wallzWallsP2', root);
+  const wallsChipP1El = wallsP1El.closest('.wallz-walls-chip');
+  const wallsChipP2El = wallsP2El.closest('.wallz-walls-chip');
+  const scoreP1WrapEl = scoreP1El.closest('.ttt-score');
+  const scoreP2WrapEl = scoreP2El.closest('.ttt-score');
   const startBtn = qs('#wallzStart', root);
   const resetScoreBtn = qs('#wallzResetScore', root);
-  const modeMoveBtn = qs('#wallzModeMove', root);
-  const modeWallBtn = qs('#wallzModeWall', root);
-  const orientationBtn = qs('#wallzOrientation', root);
 
   const score = { 1: 0, 2: 0 };
 
@@ -89,10 +90,9 @@ export function initWallz() {
   let colBlock; // Set of "gr,gc"
   let usedJoints; // Set of "gr,gc" — any wall anchored here, either orientation
   let turn; // 1 | 2
-  let mode; // 'move' | 'wall'
-  let orientation; // 'v' | 'h'
   let running = false;
   let gameOver = false;
+  let previewJoint = null; // { gr, gc, orient } | null — current hover/drag preview
 
   const cellEls = new Map(); // "r,c" -> button element
   const jointEls = new Map(); // "gr,gc" -> button element
@@ -141,9 +141,19 @@ export function initWallz() {
         joint.style.gridRow = String(16 - 2 * gr);
         joint.style.gridColumn = String(2 * gc + 2);
         joint.setAttribute('aria-label', `Muur plaatsen bij ${toLabel(gr, gc)}`);
-        joint.addEventListener('click', () => handleJointClick(gr, gc));
-        joint.addEventListener('mouseenter', () => previewWall(gr, gc, true));
-        joint.addEventListener('mouseleave', () => previewWall(gr, gc, false));
+        // Hover/drag preview and commit-on-release are both handled
+        // by the single pair of document-level pointermove/pointerup
+        // listeners set up below (using elementFromPoint), because
+        // browsers implicitly capture a touch pointer to whichever
+        // element received pointerdown — per-joint listeners would
+        // never fire for joints the finger slides onto afterwards.
+        // The only thing needed here is to release that capture so
+        // the document-level tracking can take over immediately.
+        joint.addEventListener('pointerdown', (e) => {
+          if (e.pointerId !== undefined && joint.hasPointerCapture?.(e.pointerId)) {
+            joint.releasePointerCapture(e.pointerId);
+          }
+        });
         boardEl.appendChild(joint);
         jointEls.set(key(gr, gc), joint);
       }
@@ -285,7 +295,7 @@ export function initWallz() {
 
   function highlightLegalMoves() {
     clearLegalMoveHighlights();
-    if (!running || gameOver || mode !== 'move') return;
+    if (!running || gameOver) return;
     const p = players[turn];
     neighbors(p.r, p.c).forEach((n) => {
       cellEls.get(key(n.r, n.c)).classList.add('wallz-cell-legal-move');
@@ -297,15 +307,13 @@ export function initWallz() {
     wallsP2El.textContent = String(wallsLeft[2]);
   }
 
-  function updateModeUi() {
-    modeMoveBtn.setAttribute('aria-pressed', String(mode === 'move'));
-    modeWallBtn.setAttribute('aria-pressed', String(mode === 'wall'));
-    orientationBtn.hidden = mode !== 'wall';
-    orientationBtn.textContent = orientation === 'v' ? '↕️ Verticaal' : '↔️ Horizontaal';
-    boardEl.classList.toggle('wallz-board-wall-mode', mode === 'wall');
-    jointEls.forEach((joint) => {
-      joint.tabIndex = mode === 'wall' ? 0 : -1;
-    });
+  function updateTurnUi() {
+    const p1Active = running && !gameOver && turn === 1;
+    const p2Active = running && !gameOver && turn === 2;
+    wallsChipP1El.classList.toggle('wallz-chip-active', p1Active);
+    wallsChipP2El.classList.toggle('wallz-chip-active', p2Active);
+    scoreP1WrapEl.classList.toggle('wallz-chip-active', p1Active);
+    scoreP2WrapEl.classList.toggle('wallz-chip-active', p2Active);
   }
 
   function setStatus(text) {
@@ -317,31 +325,111 @@ export function initWallz() {
   }
 
   function turnStatusText() {
-    return mode === 'wall'
-      ? `${playerLabel(turn)} is aan de beurt — kies een hoekpunt om een muur te plaatsen.`
-      : `${playerLabel(turn)} is aan de beurt — klik een gemarkeerd vak om te bewegen.`;
+    return `${playerLabel(turn)} is aan de beurt — beweeg naar een gemarkeerd vak, of wijs een hoekpunt aan om een muur te plaatsen.`;
   }
 
   // -----------------------------------------------------------------
-  // WALL HOVER PREVIEW
+  // WALL HOVER / DRAG PREVIEW
   // -----------------------------------------------------------------
-  function previewWall(gr, gc, show) {
-    if (!running || gameOver || mode !== 'wall') return;
+  // Orientation is never chosen with a separate button/mode: hovering
+  // (or, on touch, dragging a finger) over a joint picks vertical vs.
+  // horizontal automatically from the pointer's position within that
+  // joint's hit-box — closer to the top/bottom edge => horizontal
+  // wall, closer to the left/right edge => vertical wall. The wall is
+  // only actually placed on pointerup (click release, or lifting a
+  // finger on mobile) while still over that joint.
+  function orientationFromPointer(gr, gc, e) {
     const joint = jointEls.get(key(gr, gc));
-    if (!show) {
-      joint.classList.remove('wallz-joint-preview-ok', 'wallz-joint-preview-bad');
-      return;
-    }
-    const result = canPlaceWall(orientation, gr, gc, turn);
+    const rect = joint.getBoundingClientRect();
+    if (!rect.width || !rect.height) return 'v';
+    const dx = Math.abs(e.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
+    const dy = Math.abs(e.clientY - (rect.top + rect.height / 2)) / (rect.height / 2);
+    // Whichever axis the pointer has strayed further along (as a
+    // fraction of the joint's own size) decides the wall's
+    // orientation: a wall is "along" the axis perpendicular to that
+    // stray, so straying sideways (dx > dy) snaps to a vertical wall
+    // and straying up/down (dy > dx) snaps to a horizontal wall.
+    return dx > dy ? 'v' : 'h';
+  }
+
+  function clearPreview(gr, gc) {
+    const joint = jointEls.get(key(gr, gc));
+    joint.classList.remove('wallz-joint-preview-ok', 'wallz-joint-preview-bad', 'wallz-joint-preview-h', 'wallz-joint-preview-v');
+    if (previewJoint && previewJoint.gr === gr && previewJoint.gc === gc) previewJoint = null;
+  }
+
+  function updatePreview(gr, gc, e) {
+    if (!running || gameOver) return;
+    const orient = orientationFromPointer(gr, gc, e);
+    previewJoint = { gr, gc, orient };
+    const joint = jointEls.get(key(gr, gc));
+    const result = canPlaceWall(orient, gr, gc, turn);
     joint.classList.toggle('wallz-joint-preview-ok', result.ok);
     joint.classList.toggle('wallz-joint-preview-bad', !result.ok);
+    joint.classList.toggle('wallz-joint-preview-h', orient === 'h');
+    joint.classList.toggle('wallz-joint-preview-v', orient === 'v');
   }
+
+  function commitFromPointer(gr, gc, e) {
+    if (!running || gameOver) return;
+    const orient = orientationFromPointer(gr, gc, e);
+    const result = canPlaceWall(orient, gr, gc, turn);
+    if (!result.ok) {
+      setStatus(result.reason);
+      return;
+    }
+    placeWall(orient, gr, gc, turn);
+    updateWallsUi();
+    clearPreview(gr, gc);
+    endTurn();
+  }
+
+  // Touch-drag support: since pointer capture is released on
+  // pointerdown (see buildBoard()), a finger sliding across the
+  // board fires its move/up events on whichever element is under it
+  // — but only if that element is genuinely hit-tested at that
+  // point, which for touch a browser will do once capture is off.
+  // As a defensive fallback (and to make click-drag on desktop from
+  // outside a joint also work), track the joint under the pointer
+  // via elementFromPoint and commit against that on release.
+  function jointFromPoint(x, y) {
+    const el = document.elementFromPoint(x, y);
+    const joint = el?.closest?.('.wallz-joint');
+    if (!joint) return null;
+    for (const [k, v] of jointEls) {
+      if (v === joint) {
+        const [gr, gc] = k.split(',').map(Number);
+        return { gr, gc };
+      }
+    }
+    return null;
+  }
+
+  document.addEventListener('pointermove', (e) => {
+    if (!running || gameOver) return;
+    const hit = jointFromPoint(e.clientX, e.clientY);
+    if (!hit) {
+      if (previewJoint) clearPreview(previewJoint.gr, previewJoint.gc);
+      return;
+    }
+    if (previewJoint && (previewJoint.gr !== hit.gr || previewJoint.gc !== hit.gc)) {
+      clearPreview(previewJoint.gr, previewJoint.gc);
+    }
+    updatePreview(hit.gr, hit.gc, e);
+  });
+
+  document.addEventListener('pointerup', (e) => {
+    if (!running || gameOver) return;
+    const hit = jointFromPoint(e.clientX, e.clientY);
+    if (!hit) return;
+    commitFromPointer(hit.gr, hit.gc, e);
+  });
 
   // -----------------------------------------------------------------
   // INTERACTION
   // -----------------------------------------------------------------
   function handleCellClick(r, c) {
-    if (!running || gameOver || mode !== 'move') return;
+    if (!running || gameOver) return;
     const p = players[turn];
     const isLegal = neighbors(p.r, p.c).some((n) => n.r === r && n.c === c);
     if (!isLegal) return;
@@ -358,23 +446,9 @@ export function initWallz() {
     endTurn();
   }
 
-  function handleJointClick(gr, gc) {
-    if (!running || gameOver || mode !== 'wall') return;
-    const result = canPlaceWall(orientation, gr, gc, turn);
-    if (!result.ok) {
-      setStatus(result.reason);
-      return;
-    }
-    placeWall(orientation, gr, gc, turn);
-    updateWallsUi();
-    previewWall(gr, gc, false);
-    endTurn();
-  }
-
   function endTurn() {
     turn = turn === 1 ? 2 : 1;
-    mode = 'move';
-    updateModeUi();
+    updateTurnUi();
     highlightLegalMoves();
     setStatus(turnStatusText());
   }
@@ -383,6 +457,7 @@ export function initWallz() {
     running = false;
     gameOver = true;
     clearLegalMoveHighlights();
+    updateTurnUi();
     score[winner] += 1;
     scoreP1El.textContent = String(score[1]);
     scoreP2El.textContent = String(score[2]);
@@ -404,13 +479,11 @@ export function initWallz() {
     colBlock = new Set();
     usedJoints = new Set();
     turn = 1;
-    mode = 'move';
-    orientation = 'v';
     gameOver = false;
+    previewJoint = null;
 
     wallBarsWrap.replaceChildren();
     updateWallsUi();
-    updateModeUi();
     renderCells();
     highlightLegalMoves();
   }
@@ -419,6 +492,7 @@ export function initWallz() {
     resetBoard();
     running = true;
     startBtn.disabled = true;
+    updateTurnUi();
     setStatus(turnStatusText());
   }
 
@@ -432,31 +506,6 @@ export function initWallz() {
   // -----------------------------------------------------------------
   // WIRE UP CONTROLS
   // -----------------------------------------------------------------
-  modeMoveBtn.addEventListener('click', () => {
-    if (!running || gameOver) return;
-    mode = 'move';
-    updateModeUi();
-    highlightLegalMoves();
-    setStatus(turnStatusText());
-  });
-
-  modeWallBtn.addEventListener('click', () => {
-    if (!running || gameOver) return;
-    if (wallsLeft[turn] <= 0) {
-      setStatus(`${playerLabel(turn)} heeft geen muren meer over.`);
-      return;
-    }
-    mode = 'wall';
-    clearLegalMoveHighlights();
-    updateModeUi();
-    setStatus(turnStatusText());
-  });
-
-  orientationBtn.addEventListener('click', () => {
-    orientation = orientation === 'v' ? 'h' : 'v';
-    updateModeUi();
-  });
-
   startBtn.addEventListener('click', startRound);
   resetScoreBtn.addEventListener('click', () => {
     resetScore();
