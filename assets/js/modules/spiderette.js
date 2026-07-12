@@ -42,6 +42,18 @@
 // BlackJack (see blackjack.js) — one shared "chips" pool per person,
 // spent/won across both games. Never lets a balance drop below 0.
 //
+// UNDO ("Back" button + physical Backspace): every tableau move (a
+// card/run placement OR a stock deal) pushes a full snapshot of the
+// game state onto an in-memory history stack BEFORE it mutates
+// anything. Undo pops the most recent snapshot and restores it
+// wholesale, costing -50 chips each time — same "only matters while
+// logged in" rule as the quit penalty above: guests have no balance
+// to spend, so undo is simply free for them, consistent with how
+// every other chip effect in this file already behaves. Blocked
+// once the game is won (gameOver) or the history stack is empty, and
+// insufficient chips (balance < 50 while logged in) also blocks it —
+// same affordability-guard pattern as BlackJack's canAffordDouble().
+//
 // DOUBLE-CLICK: double-clicking a movable card/run auto-moves it to
 // the best legal destination. It first looks for a destination pile
 // whose top card matches by COLOUR (red/black) one rank higher; if
@@ -78,6 +90,8 @@ const SPECIAL_RANKS = new Set(['ace', 'jack', 'queen', 'king', 'joker']);
 const TOTAL_SEQUENCES = 4; // whole deck = 4 King-to-Ace runs
 const WIN_PAYOUT = 1000;
 const QUIT_PENALTY = 100;
+const UNDO_COST = 50;
+const MAX_HISTORY = 100; // generous cap — a full game never comes close to this many moves
 
 /** Ace-low rank index (ace=1 ... king=13) — sequences run King down to Ace. */
 function rankIndex(rank) {
@@ -144,6 +158,7 @@ export function initSpiderette() {
   const completedEl = document.getElementById('spiCompleted');
   const boardEl = document.getElementById('spiBoard');
   const newGameBtn = document.getElementById('spiNewGame');
+  const undoBtn = document.getElementById('spiUndo');
   const backBtn = document.getElementById('spiBackBtn');
   const winOverlay = document.getElementById('spiWinOverlay');
   const winPlayAgainBtn = document.getElementById('spiWinPlayAgain');
@@ -160,6 +175,7 @@ export function initSpiderette() {
   let stockRemoved = false; // true once the stock is pulled from play
   let gameOver = false;
   let gameSettled = false; // true once this game's chip win/loss has already been applied (guards double-counting)
+  let history = []; // stack of pre-move snapshots, for the undo/"Back" feature
 
   function isLoggedIn() {
     return Boolean(auth);
@@ -241,6 +257,7 @@ export function initSpiderette() {
       updateAuthUI();
       await loadChips();
       renderBoard(); // re-render with the special-cards art
+      updateUndoState();
     } catch {
       loginError.textContent = 'Geen verbinding, probeer het later opnieuw.';
     }
@@ -251,6 +268,7 @@ export function initSpiderette() {
     balance = null;
     updateAuthUI();
     renderBoard();
+    updateUndoState();
   }
 
   // -----------------------------------------------------------------
@@ -269,6 +287,7 @@ export function initSpiderette() {
       const data = await response.json();
       balance = data.chips;
       updateBalanceUI();
+      updateUndoState();
     } catch {
       // Offline/unreachable: keep whatever balance we last knew about.
     }
@@ -299,6 +318,7 @@ export function initSpiderette() {
     balance = Math.max(0, balance + delta);
     updateBalanceUI();
     saveChips();
+    updateUndoState();
   }
 
   // -----------------------------------------------------------------
@@ -321,11 +341,63 @@ export function initSpiderette() {
     stockRemoved = false;
     gameOver = false;
     gameSettled = false;
+    history = [];
     hideWinOverlay();
     setStatus('Klik een kaart om te kiezen, klik een stapel om ‘m neer te leggen. Dubbelklik voor een automatische zet.');
     renderBoard();
     renderCompleted();
     renderStock();
+    updateUndoState();
+  }
+
+  // -----------------------------------------------------------------
+  // UNDO ("Back" button / physical Backspace key — see file header)
+  // -----------------------------------------------------------------
+  /** Deep snapshot of everything a move can change, pushed BEFORE the
+   *  move is applied so undo can restore it wholesale. */
+  function pushHistory() {
+    history.push({
+      columns: structuredClone(columns),
+      stock: structuredClone(stock),
+      stockWaveIndex,
+      completedColours: [...completedColours],
+      stockRemoved,
+    });
+    if (history.length > MAX_HISTORY) history.shift();
+  }
+
+  function updateUndoState() {
+    if (!undoBtn) return;
+    undoBtn.disabled = gameOver || history.length === 0
+      || (isLoggedIn() && balance !== null && balance < UNDO_COST);
+  }
+
+  function undoLastMove() {
+    if (gameOver || history.length === 0) return;
+    if (isLoggedIn() && balance !== null && balance < UNDO_COST) {
+      setStatus(`Niet genoeg credits om terug te zetten (kost ${UNDO_COST}).`);
+      return;
+    }
+
+    const snap = history.pop();
+    columns = snap.columns;
+    stock = snap.stock;
+    stockWaveIndex = snap.stockWaveIndex;
+    completedColours = snap.completedColours;
+    stockRemoved = snap.stockRemoved;
+    selection = null;
+
+    if (isLoggedIn()) {
+      applyChipDelta(-UNDO_COST);
+      setStatus(`Zet teruggezet (-${UNDO_COST} credits).`);
+    } else {
+      setStatus('Zet teruggezet.');
+    }
+
+    renderBoard();
+    renderCompleted();
+    renderStock();
+    updateUndoState();
   }
 
   // -----------------------------------------------------------------
@@ -413,6 +485,7 @@ export function initSpiderette() {
       winPayoutEl.textContent = isLoggedIn() ? `Je wint ${WIN_PAYOUT} chips! 🪙` : '';
     }
     showWinOverlay();
+    updateUndoState();
   }
 
   function showWinOverlay() {
@@ -532,6 +605,7 @@ export function initSpiderette() {
       return;
     }
 
+    pushHistory();
     const run = columns[fromCol].splice(fromIndex);
     columns[toCol].push(...run);
     if (columns[fromCol].length) columns[fromCol][columns[fromCol].length - 1].faceUp = true;
@@ -542,6 +616,7 @@ export function initSpiderette() {
       setStatus('Klik een kaart om te kiezen, klik een stapel om ‘m neer te leggen. Dubbelklik voor een automatische zet.');
     }
     renderBoard();
+    updateUndoState();
   }
 
   function dealFromStock() {
@@ -550,6 +625,7 @@ export function initSpiderette() {
       setStatus('Vul eerst elke lege stapel voordat je nieuwe kaarten deelt.');
       return;
     }
+    pushHistory();
     const waveSize = STOCK_WAVE_SIZES[stockWaveIndex] ?? stock.length;
     const dealCount = Math.min(stock.length, waveSize, COLUMN_COUNT);
     for (let col = 0; col < dealCount; col++) {
@@ -562,6 +638,7 @@ export function initSpiderette() {
     sweepCompletedSequences();
     renderBoard();
     renderStock();
+    updateUndoState();
   }
 
   // -----------------------------------------------------------------
@@ -646,6 +723,19 @@ export function initSpiderette() {
   newGameBtn.addEventListener('click', dealNewGame);
   if (winPlayAgainBtn) winPlayAgainBtn.addEventListener('click', dealNewGame);
   if (backBtn) backBtn.addEventListener('click', handleBackClick);
+  if (undoBtn) undoBtn.addEventListener('click', undoLastMove);
+
+  // Physical Backspace also undoes — ignored while typing in the
+  // login form's passphrase field, so it still behaves like a normal
+  // text-editing backspace there instead of undoing a move.
+  document.addEventListener('keydown', (event) => {
+    if (!app.isConnected) return;
+    if (event.key !== 'Backspace') return;
+    const tag = event.target?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    event.preventDefault();
+    undoLastMove();
+  });
 
   showLoginBtn.addEventListener('click', showLoginForm);
   cancelLoginBtn.addEventListener('click', hideLoginForm);

@@ -18,6 +18,24 @@
   transform: scale(0.98);
 }
 
+/* Visibly-disabled state, shared by every .btn variant (primary/outline/etc).
+   Same look as .bj-chip:disabled in blackjack.css, kept in one place here
+   so any button anywhere in the site — not just BlackJack's — gets a
+   consistent "can't click this right now" treatment. */
+.btn:disabled {
+  opacity: 0.35;
+  filter: grayscale(1);
+  cursor: not-allowed;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.btn:disabled:hover,
+.btn:disabled:focus-visible,
+.btn:disabled:active {
+  transform: none;
+}
+
 .btn-primary {
   background: radial-gradient(circle at center, var(--color-tertiary) 0%, var(--color-primary) 150%);
   color: var(--color-white);

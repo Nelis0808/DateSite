@@ -325,12 +325,28 @@ export function initWordle() {
       currentGuess = currentGuess.slice(0, -1);
       clearInvalidRow();
       updateCurrentRow();
+      checkLiveValidity();
       return;
     }
     if (currentGuess.length < wordLength) {
       currentGuess += key;
       clearInvalidRow();
       updateCurrentRow();
+      checkLiveValidity();
+    }
+  }
+
+  /** Runs after every keystroke (letter or backspace), not just on
+   *  Enter. As soon as the row is filled to wordLength, checks the
+   *  word against the dictionary right away — if it's not a real
+   *  word, the red border appears immediately instead of waiting for
+   *  the player to press Enter. A row that isn't full yet, or one
+   *  that already matches a real word (e.g. the correct answer),
+   *  never gets marked — clearInvalidRow() above already handles
+   *  wiping the border the moment the player edits the row. */
+  function checkLiveValidity() {
+    if (currentGuess.length === wordLength && !validGuesses.has(currentGuess)) {
+      markRowInvalid();
     }
   }
 

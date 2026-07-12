@@ -155,6 +155,25 @@
   margin-top: var(--space-5);
 }
 
+/* == NEXT HAND CHOICE ==
+   Shown after a hand finishes, replacing the old single "Volgende
+   hand" button — same centered/wrapping layout as .bj-actions, just
+   with a label above it. */
+.bj-next-hand-group {
+  margin-top: var(--space-5);
+  text-align: center;
+}
+
+.bj-next-hand-label {
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.bj-next-hand-group .bj-actions {
+  margin-top: 0;
+}
+
 /* == TABLE == */
 .bj-table {
   margin-top: var(--space-6);

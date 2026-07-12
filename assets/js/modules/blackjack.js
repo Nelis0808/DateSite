@@ -160,7 +160,9 @@ export function initBlackjack() {
   const hitBtn = document.getElementById('bjHit');
   const standBtn = document.getElementById('bjStand');
   const doubleBtn = document.getElementById('bjDouble');
-  const nextHandBtn = document.getElementById('bjNextHand');
+  const nextHandGroup = document.getElementById('bjNextHandGroup');
+  const sameBetBtn = document.getElementById('bjSameBet');
+  const newBetBtn = document.getElementById('bjNewBet');
 
   // ---- state ----
   let auth = null; // { token, who, exp } | null
@@ -171,6 +173,7 @@ export function initBlackjack() {
   let dealerHand = [];
   let handInProgress = false;
   let dealerHoleHidden = false;
+  let previousBet = 0; // the bet from the hand that just finished, offered again by "Dezelfde inzet"
 
   function isLoggedIn() {
     return Boolean(auth);
@@ -435,7 +438,7 @@ export function initBlackjack() {
     table.classList.remove('hidden');
     dealBtn.disabled = true;
     clearBetBtn.disabled = true;
-    nextHandBtn.classList.add('hidden');
+    nextHandGroup.classList.add('hidden');
     renderHands();
     scrollToTable();
 
@@ -532,22 +535,46 @@ export function initBlackjack() {
     // 'push': balance unchanged, bet effectively returned.
 
     setStatus(message);
+    previousBet = bet;
     bet = 0;
     updateBalanceUI();
     clearBetBtn.disabled = false;
-    nextHandBtn.classList.remove('hidden');
+    nextHandGroup.classList.remove('hidden');
+    // Can only offer to repeat the bet if the balance still covers it
+    // (e.g. a loss can leave the player unable to afford it again).
+    sameBetBtn.disabled = previousBet <= 0 || previousBet > balance;
 
     saveChips();
   }
 
-  function startNextHand() {
+  /** Shared reset between the "same bet" and "new bet" choices — clears
+   *  the table back to the betting screen. */
+  function resetTable() {
     playerHand = [];
     dealerHand = [];
     dealerHoleHidden = false;
     table.classList.add('hidden');
-    nextHandBtn.classList.add('hidden');
+    nextHandGroup.classList.add('hidden');
     setStatus('');
+  }
+
+  /** "Nieuwe inzet" — same as the old single "Volgende hand" button:
+   *  back to an empty bet, player picks fresh chips before dealing. */
+  function startNextHandNewBet() {
+    resetTable();
+    bet = 0;
     updateBalanceUI();
+  }
+
+  /** "Dezelfde inzet" — re-places last hand's bet and deals immediately,
+   *  so back-to-back hands at the same stake don't need re-clicking
+   *  through the chip tray each time. */
+  function startNextHandSameBet() {
+    if (previousBet <= 0 || previousBet > balance) return;
+    resetTable();
+    bet = previousBet;
+    updateBalanceUI();
+    dealHand();
   }
 
   // -----------------------------------------------------------------
@@ -568,7 +595,8 @@ export function initBlackjack() {
   hitBtn.addEventListener('click', hit);
   standBtn.addEventListener('click', stand);
   doubleBtn.addEventListener('click', double);
-  nextHandBtn.addEventListener('click', startNextHand);
+  sameBetBtn.addEventListener('click', startNextHandSameBet);
+  newBetBtn.addEventListener('click', startNextHandNewBet);
 
   // ---- init ----
   renderChipTray();

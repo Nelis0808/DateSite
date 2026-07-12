@@ -9,7 +9,9 @@
 #tttApp,
 #c4App,
 #wordleApp,
-#hangmanApp {
+#hangmanApp,
+#hangmanCustomApp,
+#wallzApp {
   width: min(90%, var(--container-narrow));
   margin-inline: auto;
   text-align: center;
