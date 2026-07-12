@@ -12,12 +12,26 @@
 // splits it into the two columns when rendering, and tags new gifts
 // with whichever column's add-form was used.
 //
+// EDITING: clicking the ✏️ button on a card opens the SAME form
+// used for adding, but pre-filled and in "edit mode" — submitting it
+// sends a PATCH to /gifts/:id (updating title/url/note/person) instead
+// of appending a new entry. Cancelling restores the form to its
+// normal "add" state. Only one card can be edited at a time (opening
+// a second edit cancels the first) to keep the two-column layout from
+// getting confusing with multiple forms mid-edit.
+//
+// PHOTOS: the add/edit form has an optional file picker. If a file is
+// chosen, it's uploaded to POST /gifts/upload?id=<id> right after the
+// gift itself is saved (so the id is always known first) — the
+// Worker stores it in R2 and it immediately takes priority over any
+// scraped og:image for that gift (see the Worker's own comment).
+//
 // IMAGES: for each gift, the browser never fetches the linked shop's
 // image directly (that'd hit CORS walls constantly). Instead it asks
 // the Worker for `${workerUrl}/gifts/image?id=<id>&url=<link>`, which
-// returns a custom photo if you uploaded one to the R2 bucket, or
-// tries to scrape the link's og:image, or 404s (shown as a plain
-// gift-box icon).
+// returns a custom photo if one was uploaded (dashboard OR this page
+// now), or tries to scrape the link's og:image, or 404s (shown as a
+// plain gift-box icon).
 //
 // SYNC MODEL: same optimistic-update + polling approach as
 // boodschappenlijst.js — see its top comment for the reasoning.
@@ -28,6 +42,7 @@ import { qs, qsa, escapeHtml } from './utils.js';
 
 const POLL_INTERVAL_MS = 8000;
 const PERSONS = ['b', 'a']; // b (Kalina) left, a (Niels) right — matches the markup order
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 
 export function initGifts() {
   const root = document.getElementById('giftsApp');
@@ -66,13 +81,13 @@ export function initGifts() {
   let pollTimer = null;
   let saveInFlight = false;
 
+  // Which gift (if any) is currently being edited — only one at a
+  // time, see file header.
+  let editingId = null;
+
   // Tracks object URLs handed out by loadGiftImage() so they can be
   // revoked on the next render instead of leaking memory forever.
   let activeObjectUrls = [];
-
-  // Errors are logged to the console (see loadGifts/saveGifts below)
-  // rather than shown in the UI — there's no status line on this
-  // page anymore.
 
   // ---- Rendering -----------------------------------------------------
 
@@ -106,7 +121,10 @@ export function initGifts() {
                   ${gift.note ? `<span class="gf-card-note">${escapeHtml(gift.note)}</span>` : ''}
                 </div>
               </a>
-              <button type="button" class="gf-delete" aria-label="${escapeHtml(gift.title)} verwijderen">✕</button>
+              <div class="gf-card-actions">
+                <button type="button" class="gf-edit" aria-label="${escapeHtml(gift.title)} bewerken">✏️</button>
+                <button type="button" class="gf-delete" aria-label="${escapeHtml(gift.title)} verwijderen">✕</button>
+              </div>
             </li>
           `
         )
@@ -179,6 +197,43 @@ export function initGifts() {
     }
   }
 
+  async function patchGift(id, patch) {
+    try {
+      const response = await fetch(`${workerUrl}/gifts/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      gifts = Array.isArray(data.gifts) ? data.gifts : gifts;
+      render();
+      return true;
+    } catch (error) {
+      console.error('Kon cadeau niet bijwerken:', error);
+      await loadGifts({ silent: true });
+      return false;
+    }
+  }
+
+  async function uploadGiftPhoto(id, file) {
+    try {
+      const response = await fetch(`${workerUrl}/gifts/upload?id=${encodeURIComponent(id)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+      return true;
+    } catch (error) {
+      console.error('Kon foto niet uploaden:', error);
+      return false;
+    }
+  }
+
   // Best-effort: if the person left the title blank, ask the Worker
   // to peek at the link's <title>/og:title so they don't have to
   // type it themselves. Never blocks adding the gift — on any
@@ -196,37 +251,96 @@ export function initGifts() {
 
   // ---- Mutations ---------------------------------------------------
 
-  async function addGift(person, { url, title, note }, formEls) {
+  async function addGift(person, { url, title, note, photoFile }, formEls) {
     const trimmedUrl = url.trim();
     let trimmedTitle = title.trim();
 
+    setFormBusy(formEls, true, 'Bezig…');
+
     if (!trimmedTitle) {
-      formEls.submitBtn.disabled = true;
-      formEls.submitBtn.textContent = 'Bezig…';
       trimmedTitle = (await fetchTitleFor(trimmedUrl)) || trimmedUrl;
-      formEls.submitBtn.disabled = false;
-      formEls.submitBtn.textContent = 'Toevoegen';
     }
 
+    const id = crypto.randomUUID();
     gifts = [
       ...gifts,
-      {
-        id: crypto.randomUUID(),
-        person,
-        title: trimmedTitle,
-        url: trimmedUrl,
-        note: note.trim(),
-        addedAt: Date.now(),
-      },
+      { id, person, title: trimmedTitle, url: trimmedUrl, note: note.trim(), addedAt: Date.now() },
     ];
+    render();
+    await saveGifts();
+
+    if (photoFile) {
+      await uploadGiftPhoto(id, photoFile);
+      render(); // re-fetch the thumbnail now that a custom photo exists
+    }
+
+    setFormBusy(formEls, false, 'Toevoegen');
+  }
+
+  async function saveEdit(id, { url, title, note, person, photoFile }, formEls) {
+    setFormBusy(formEls, true, 'Opslaan…');
+
+    const ok = await patchGift(id, { url: url.trim(), title: title.trim(), note: note.trim(), person });
+
+    if (ok && photoFile) {
+      await uploadGiftPhoto(id, photoFile);
+      render();
+    }
+
+    setFormBusy(formEls, false, 'Toevoegen');
+    return ok;
+  }
+
+  function setFormBusy(formEls, busy, label) {
+    formEls.submitBtn.disabled = busy;
+    formEls.submitBtn.textContent = label;
+  }
+
+  function deleteGift(id) {
+    if (editingId === id) exitEditMode(columnEls[gifts.find((g) => g.id === id)?.person] || columnEls.a);
+    gifts = gifts.filter((gift) => gift.id !== id);
     render();
     saveGifts();
   }
 
-  function deleteGift(id) {
-    gifts = gifts.filter((gift) => gift.id !== id);
-    render();
-    saveGifts();
+  // ---- Edit mode -----------------------------------------------------
+  // Reuses each column's existing add-form: swapping its fields to the
+  // gift's current values, changing the submit button's label, and
+  // remembering `editingId` so the submit handler below knows to PATCH
+  // instead of add. Only one edit can be open at once.
+
+  function enterEditMode(gift) {
+    if (editingId && editingId !== gift.id) {
+      // Cancel whichever edit was already open first.
+      const previousGift = gifts.find((g) => g.id === editingId);
+      if (previousGift) exitEditMode(columnEls[previousGift.person]);
+    }
+
+    editingId = gift.id;
+    const { form } = columnEls[gift.person];
+    qs('.gf-add-url', form).value = gift.url;
+    qs('.gf-add-title', form).value = gift.title;
+    qs('.gf-add-note', form).value = gift.note || '';
+    qs('.gf-add-photo', form).value = '';
+    qs('button[type="submit"]', form).textContent = 'Wijzigingen opslaan';
+    form.classList.add('gf-add-form-editing');
+
+    const cancelBtn = qs('.gf-edit-cancel', form);
+    if (cancelBtn) cancelBtn.classList.remove('hidden');
+
+    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    qs('.gf-add-title', form).focus();
+  }
+
+  function exitEditMode(columnConfig) {
+    if (!columnConfig) return;
+    editingId = null;
+    const { form } = columnConfig;
+    form.reset();
+    qs('button[type="submit"]', form).textContent = 'Toevoegen';
+    form.classList.remove('gf-add-form-editing');
+    const cancelBtn = qs('.gf-edit-cancel', form);
+    if (cancelBtn) cancelBtn.classList.add('hidden');
   }
 
   // ---- Wiring ------------------------------------------------------
@@ -236,10 +350,12 @@ export function initGifts() {
     const urlInput = qs('.gf-add-url', form);
     const titleInput = qs('.gf-add-title', form);
     const noteInput = qs('.gf-add-note', form);
+    const photoInput = qs('.gf-add-photo', form);
     const errorEl = form.nextElementSibling; // .gf-add-error, right after the form
     const submitBtn = qs('button[type="submit"]', form);
+    const cancelBtn = qs('.gf-edit-cancel', form);
 
-    form.addEventListener('submit', (event) => {
+    form.addEventListener('submit', async (event) => {
       event.preventDefault();
       errorEl.textContent = '';
 
@@ -256,21 +372,43 @@ export function initGifts() {
         return;
       }
 
-      addGift(
-        person,
-        { url: urlValue, title: titleInput.value, note: noteInput.value },
-        { submitBtn }
-      );
-      form.reset();
-      urlInput.focus();
+      const photoFile = photoInput?.files?.[0] || null;
+      if (photoFile && photoFile.size > MAX_UPLOAD_BYTES) {
+        errorEl.textContent = `Foto is te groot (max ${Math.floor(MAX_UPLOAD_BYTES / 1024 / 1024)}MB).`;
+        return;
+      }
+
+      const payload = { url: urlValue, title: titleInput.value, note: noteInput.value, photoFile, person };
+
+      if (editingId) {
+        const ok = await saveEdit(editingId, payload, { submitBtn });
+        if (ok) exitEditMode(columnEls[person]);
+      } else {
+        await addGift(person, payload, { submitBtn });
+        form.reset();
+        urlInput.focus();
+      }
     });
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => exitEditMode(columnEls[person]));
+    }
   });
 
   columnsEl.addEventListener('click', (event) => {
     const deleteBtn = event.target.closest('.gf-delete');
-    if (!deleteBtn) return;
-    const id = deleteBtn.closest('.gf-card')?.dataset.id;
-    if (id) deleteGift(id);
+    if (deleteBtn) {
+      const id = deleteBtn.closest('.gf-card')?.dataset.id;
+      if (id) deleteGift(id);
+      return;
+    }
+
+    const editBtn = event.target.closest('.gf-edit');
+    if (editBtn) {
+      const id = editBtn.closest('.gf-card')?.dataset.id;
+      const gift = gifts.find((g) => g.id === id);
+      if (gift) enterEditMode(gift);
+    }
   });
 
   // ---- Polling (picks up gifts added on the other person's device) ----
@@ -278,7 +416,9 @@ export function initGifts() {
   function startPolling() {
     stopPolling();
     pollTimer = setInterval(() => {
-      if (!saveInFlight) loadGifts({ silent: true });
+      // Also skip while an edit form is open, so we never blow away
+      // in-progress form input with a fresh render from the poll.
+      if (!saveInFlight && !editingId) loadGifts({ silent: true });
     }, POLL_INTERVAL_MS);
   }
 
@@ -291,7 +431,7 @@ export function initGifts() {
     if (document.hidden) {
       stopPolling();
     } else {
-      loadGifts({ silent: true });
+      if (!editingId) loadGifts({ silent: true });
       startPolling();
     }
   });

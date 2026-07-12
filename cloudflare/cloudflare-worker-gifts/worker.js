@@ -2,10 +2,11 @@
 // GIFT IDEAS — LIST SYNC + IMAGE RESOLVER (Cloudflare Worker)
 // -----------------------------------------------------------------
 // Powers gifts.html: two synced lists of gift ideas ("voor Kalina" /
-// "voor Niels"), each entry just a link + a title + an optional note.
-// No login here (same reasoning as the boodschappenlijst Worker) —
-// a gift-idea list just isn't sensitive enough to be worth the
-// extra friction.
+// "voor Niels"), each entry a link + a title + an optional note, and
+// now an optional custom photo (see /gifts/upload below). No login
+// here (same reasoning as the boodschappenlijst Worker) — a
+// gift-idea list just isn't sensitive enough to be worth the extra
+// friction.
 //
 // Storage:
 //   - Cloudflare KV (binding `GIFTS_KV`), ONE key ("gifts") holding
@@ -16,7 +17,9 @@
 //     photos, same idea as the private photo gallery's bucket, but
 //     public/no-login (it only ever holds pictures of gift *ideas*,
 //     never anything private). Filename convention: `<gift id>.<ext>`
-//     — see STAPPENPLAN-GIFTS.md.
+//     — see STAPPENPLAN-GIFTS.md. Can be uploaded either by hand via
+//     the R2 dashboard, OR now directly from gifts.html's add/edit
+//     form via POST /gifts/upload (see below).
 //
 // IMAGE RESOLUTION ORDER for a given gift (GET /gifts/image), this
 // is the whole point of this Worker:
@@ -28,13 +31,22 @@
 //      twitter:image), and proxies that image back.
 //   3. Otherwise: 404, and the site just shows a plain gift-box icon.
 //
+// EDITING: PATCH /gifts/:id updates title/url/note/person on an
+// existing entry in place (keeping its id and addedAt), instead of
+// the old "delete + re-add" being the only option. Deleting an old
+// custom photo when a gift's id is removed, or replacing one on
+// edit, is handled by /gifts/upload simply overwriting/removing
+// whatever's stored under that id — see below.
+//
 // Deploy instructions: see STAPPENPLAN-GIFTS.md at the repo root.
 //
 // Routes:
-//   GET  /gifts                        -> { gifts, updatedAt }
-//   PUT  /gifts                { gifts } -> { gifts, updatedAt }  (overwrites)
-//   GET  /gifts/meta?url=...           -> { title, imageUrl }  (best-effort link preview, used to prefill the add-form)
-//   GET  /gifts/image?id=...&url=...   -> raw image bytes (custom photo, else scraped og:image)
+//   GET   /gifts                          -> { gifts, updatedAt }
+//   PUT   /gifts                { gifts } -> { gifts, updatedAt }  (overwrites the whole list)
+//   PATCH /gifts/:id     { title?,url?,note?,person? } -> { gifts, updatedAt } (edits one entry)
+//   GET   /gifts/meta?url=...             -> { title, imageUrl }  (best-effort link preview, used to prefill the add-form)
+//   GET   /gifts/image?id=...&url=...     -> raw image bytes (custom photo, else scraped og:image)
+//   POST  /gifts/upload?id=...            -> { ok: true }  (multipart/form-data or raw image body — uploads/replaces a custom photo for that gift)
 // =================================================================
 
 const ALLOWED_ORIGINS = [
@@ -50,6 +62,7 @@ const MAX_GIFTS = 300;         // sane ceiling, not a real limit anyone will hit
 const MAX_TEXT_LENGTH = 200;   // title / note
 const MAX_URL_LENGTH = 2000;
 const VALID_PERSONS = new Set(['a', 'b']); // a = Niels, b = Kalina (see config.js)
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024; // 8MB — generous for a phone photo, small enough to stay well within R2 free tier
 
 const IMAGE_CONTENT_TYPES = {
   jpg: 'image/jpeg',
@@ -59,13 +72,20 @@ const IMAGE_CONTENT_TYPES = {
   gif: 'image/gif',
 };
 
+const EXTENSION_FOR_CONTENT_TYPE = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+};
+
 // ---- CORS / JSON helpers -------------------------------------------
 
 function corsHeaders(origin) {
   const allowed = ALLOWED_ORIGINS.includes(origin);
   return {
     'Access-Control-Allow-Origin': allowed ? origin : 'null',
-    'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, PUT, PATCH, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     Vary: 'Origin',
   };
@@ -104,6 +124,35 @@ function validateGifts(body) {
     });
   }
   return cleaned;
+}
+
+/** Validates a PATCH body — every field optional, but whatever IS present must be well-formed. Returns a partial object to merge in, or null if the body is bad. */
+function validateGiftPatch(body) {
+  if (!body || typeof body !== 'object') return null;
+  const patch = {};
+
+  if ('title' in body) {
+    if (typeof body.title !== 'string') return null;
+    const title = body.title.trim().slice(0, MAX_TEXT_LENGTH);
+    if (!title) return null;
+    patch.title = title;
+  }
+  if ('url' in body) {
+    if (typeof body.url !== 'string') return null;
+    const url = body.url.trim().slice(0, MAX_URL_LENGTH);
+    if (!isHttpUrl(url)) return null;
+    patch.url = url;
+  }
+  if ('note' in body) {
+    if (typeof body.note !== 'string') return null;
+    patch.note = body.note.trim().slice(0, MAX_TEXT_LENGTH);
+  }
+  if ('person' in body) {
+    if (!VALID_PERSONS.has(body.person)) return null;
+    patch.person = body.person;
+  }
+
+  return patch;
 }
 
 // ---- URL / SSRF safety -------------------------------------------------
@@ -197,6 +246,16 @@ async function findCustomPhoto(bucket, giftId) {
   return bucket.get(match.key).then((object) => (object ? { object, key: match.key } : null));
 }
 
+/** Removes any existing custom photo(s) for a gift id — used before
+ *  saving a new upload (so switching file types, e.g. jpg -> png,
+ *  doesn't leave the old file dangling and ambiguous) and when a
+ *  gift is deleted from the list. */
+async function deleteCustomPhoto(bucket, giftId) {
+  const listing = await bucket.list({ prefix: `${giftId}.` });
+  const imageKeys = listing.objects.filter((obj) => isImageKey(obj.key)).map((obj) => obj.key);
+  await Promise.all(imageKeys.map((k) => bucket.delete(k)));
+}
+
 export default {
   async fetch(request, env, ctx) {
     const origin = request.headers.get('Origin') || '';
@@ -231,12 +290,55 @@ export default {
           return jsonResponse({ error: 'Ongeldige lijst' }, 400, headers);
         }
 
+        // Any gift that existed before this overwrite but isn't in the
+        // new list anymore was deleted — clean up its custom photo too,
+        // so R2 doesn't slowly accumulate orphaned images.
+        if (env.GIFTS_BUCKET) {
+          const previous = (await env.GIFTS_KV.get(KV_KEY, 'json')) || { gifts: [] };
+          const newIds = new Set(gifts.map((g) => g.id));
+          const removedIds = (previous.gifts || []).map((g) => g.id).filter((id) => !newIds.has(id));
+          ctx.waitUntil(Promise.all(removedIds.map((id) => deleteCustomPhoto(env.GIFTS_BUCKET, id))));
+        }
+
         const stored = { gifts, updatedAt: Date.now() };
         await env.GIFTS_KV.put(KV_KEY, JSON.stringify(stored));
         return jsonResponse(stored, 200, headers);
       }
 
       return jsonResponse({ error: 'Method not allowed' }, 405, headers);
+    }
+
+    // ---- PATCH /gifts/:id : edit one existing entry in place ----
+    if (url.pathname.startsWith('/gifts/') && request.method === 'PATCH') {
+      const id = url.pathname.slice('/gifts/'.length);
+      if (!id) return jsonResponse({ error: 'Ontbrekende id' }, 400, headers);
+
+      if (!env.GIFTS_KV) {
+        return jsonResponse({ error: 'Server misconfigured: GIFTS_KV binding ontbreekt' }, 500, headers);
+      }
+
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return jsonResponse({ error: 'Ongeldige aanvraag' }, 400, headers);
+      }
+
+      const patch = validateGiftPatch(body);
+      if (patch === null) {
+        return jsonResponse({ error: 'Ongeldige wijziging' }, 400, headers);
+      }
+
+      const stored = (await env.GIFTS_KV.get(KV_KEY, 'json')) || { gifts: [], updatedAt: Date.now() };
+      const index = (stored.gifts || []).findIndex((g) => g.id === id);
+      if (index === -1) {
+        return jsonResponse({ error: 'Cadeau niet gevonden' }, 404, headers);
+      }
+
+      stored.gifts[index] = { ...stored.gifts[index], ...patch };
+      stored.updatedAt = Date.now();
+      await env.GIFTS_KV.put(KV_KEY, JSON.stringify(stored));
+      return jsonResponse(stored, 200, headers);
     }
 
     // ---- GET /gifts/meta?url=... : best-effort link preview (prefills the add-form) ----
@@ -265,6 +367,46 @@ export default {
       } catch (error) {
         return jsonResponse({ title: '', imageUrl: null }, 200, headers);
       }
+    }
+
+    // ---- POST /gifts/upload?id=... : upload/replace a custom photo ----
+    // Body is the raw image bytes (fetch(..., { body: file }) from the
+    // browser — see gifts.js) with a Content-Type header identifying
+    // the image format. Deliberately simple (no multipart parsing
+    // needed) since the browser only ever sends one file at a time here.
+    if (url.pathname === '/gifts/upload' && request.method === 'POST') {
+      if (!env.GIFTS_BUCKET) {
+        return jsonResponse({ error: 'Server misconfigured: GIFTS_BUCKET binding ontbreekt' }, 500, headers);
+      }
+
+      const giftId = url.searchParams.get('id') || '';
+      if (!giftId || !/^[a-zA-Z0-9-]+$/.test(giftId)) {
+        return jsonResponse({ error: 'Ongeldige of ontbrekende id' }, 400, headers);
+      }
+
+      const contentType = (request.headers.get('Content-Type') || '').split(';')[0].trim().toLowerCase();
+      const ext = EXTENSION_FOR_CONTENT_TYPE[contentType];
+      if (!ext) {
+        return jsonResponse({ error: 'Alleen jpg, png, webp of gif toegestaan' }, 400, headers);
+      }
+
+      const bytes = await request.arrayBuffer();
+      if (bytes.byteLength === 0) {
+        return jsonResponse({ error: 'Lege upload' }, 400, headers);
+      }
+      if (bytes.byteLength > MAX_UPLOAD_BYTES) {
+        return jsonResponse({ error: `Foto te groot (max ${Math.floor(MAX_UPLOAD_BYTES / 1024 / 1024)}MB)` }, 413, headers);
+      }
+
+      // Replace, don't accumulate: drop any previous photo(s) for this
+      // id first (covers switching file types, e.g. a re-uploaded jpg
+      // replacing an old png) before writing the new one.
+      await deleteCustomPhoto(env.GIFTS_BUCKET, giftId);
+      await env.GIFTS_BUCKET.put(`${giftId}.${ext}`, bytes, {
+        httpMetadata: { contentType },
+      });
+
+      return jsonResponse({ ok: true }, 200, headers);
     }
 
     // ---- GET /gifts/image?id=...&url=... : custom photo first, else scraped og:image ----

@@ -2,8 +2,9 @@
    PAGE: SPIDERETTE (games/spiderette.html)
    Reuses shared #spiApp centering + .ttt-status/.ttt-actions from
    games.css. Auth-bar structure mirrors blackjack.css (same login
-   flow, no balance here — see spiderette.js file header), so the
-   two files intentionally look similar.
+   flow, chips bar reuses blackjack's balance look at a smaller
+   scale — see spiderette.js file header), so the two files
+   intentionally look similar.
    ============================================================= */
 
 #spiApp {
@@ -67,6 +68,36 @@
   font-size: var(--fs-sm);
   color: var(--color-danger);
   margin-top: var(--space-2);
+}
+
+/* == CHIP BALANCE ==
+   Smaller, single-value cousin of blackjack.css's .bj-balance — no
+   separate bet display here, Spiderette has no betting, just a
+   win/loss delta applied automatically (see spiderette.js). */
+.spi-chips-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  width: fit-content;
+  margin-inline: auto;
+}
+
+.spi-chips-label {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.spi-chips-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--color-primary);
 }
 
 /* == STOCK + COMPLETED TRAY == */
@@ -250,6 +281,11 @@
 .spi-win-card p:not(.spi-win-emoji) {
   color: var(--color-text-muted);
   margin-bottom: var(--space-5);
+}
+
+.spi-win-payout {
+  font-weight: 700;
+  color: var(--color-success) !important;
 }
 
 @keyframes spi-win-pop {

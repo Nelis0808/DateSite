@@ -3,12 +3,15 @@
   GIFT IDEAS PAGE
   Two synced columns of gift-idea links — Kalina left, Niels right.
   Logic lives in assets/js/modules/gifts.js — this file only contains
-  the markup (status line, two columns, add-forms) that the module
-  fills in and wires up. Data (links/titles/notes) is stored in
-  Cloudflare KV via a small Worker, same pattern as
+  the markup (status line, two columns, add/edit-forms) that the
+  module fills in and wires up. Data (links/titles/notes/photos) is
+  stored in Cloudflare KV + R2 via a small Worker, same pattern as
   boodschappenlijst.html; that Worker also resolves each gift's
-  thumbnail (a manually-uploaded custom photo first, else it scrapes
-  the link's og:image) — see STAPPENPLAN-GIFTS.md.
+  thumbnail (a manually-uploaded or in-page-uploaded custom photo
+  first, else it scrapes the link's og:image) — see
+  STAPPENPLAN-GIFTS.md. Each card's ✏️ button re-uses the SAME form
+  below (pre-filled, in "edit" mode) rather than a separate form, to
+  keep the page simple — see gifts.js's enterEditMode/exitEditMode.
 -->
 <html lang="nl">
 <head>
@@ -46,7 +49,7 @@
     <section id="hero" class="hero">
       <div class="container">
         <h1>🎁 Cadeau Ideeën</h1>
-        <p>Zet een linkje klaar, wij zoeken er zelf een plaatje bij.</p>
+        <p>Zet een linkje klaar, wij zoeken er zelf een plaatje bij — of upload er zelf een.</p>
       </div>
     </section>
 
@@ -69,7 +72,14 @@
             <input type="url" class="gf-add-url" placeholder="Link naar het cadeau…" maxlength="2000" required aria-label="Link naar het cadeau voor Kalina">
             <input type="text" class="gf-add-title" placeholder="Titel (bv. \u2018Wandelschoenen\u2019)" maxlength="200" aria-label="Titel van het cadeau voor Kalina">
             <input type="text" class="gf-add-note" placeholder="Notitie (optioneel)" maxlength="200" aria-label="Notitie bij het cadeau voor Kalina">
-            <button type="submit" class="btn btn-primary">Toevoegen</button>
+            <label class="gf-add-photo-label">
+              📷 Eigen foto (optioneel)
+              <input type="file" class="gf-add-photo" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Eigen foto voor het cadeau voor Kalina">
+            </label>
+            <div class="gf-add-form-buttons">
+              <button type="submit" class="btn btn-primary">Toevoegen</button>
+              <button type="button" class="btn btn-outline gf-edit-cancel hidden">Annuleren</button>
+            </div>
           </form>
           <p class="gf-add-error" aria-live="polite"></p>
         </section>
@@ -85,7 +95,14 @@
             <input type="url" class="gf-add-url" placeholder="Link naar het cadeau…" maxlength="2000" required aria-label="Link naar het cadeau voor Niels">
             <input type="text" class="gf-add-title" placeholder="Titel (bv. \u2018Wandelschoenen\u2019)" maxlength="200" aria-label="Titel van het cadeau voor Niels">
             <input type="text" class="gf-add-note" placeholder="Notitie (optioneel)" maxlength="200" aria-label="Notitie bij het cadeau voor Niels">
-            <button type="submit" class="btn btn-primary">Toevoegen</button>
+            <label class="gf-add-photo-label">
+              📷 Eigen foto (optioneel)
+              <input type="file" class="gf-add-photo" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Eigen foto voor het cadeau voor Niels">
+            </label>
+            <div class="gf-add-form-buttons">
+              <button type="submit" class="btn btn-primary">Toevoegen</button>
+              <button type="button" class="btn btn-outline gf-edit-cancel hidden">Annuleren</button>
+            </div>
           </form>
           <p class="gf-add-error" aria-live="polite"></p>
         </section>

@@ -31,6 +31,17 @@
 // same-colour King-to-Ace sequences have been cleared (the entire
 // deck swept off the board).
 //
+// CHIPS: winning a full game pays out +1000 chips; abandoning a game
+// early via the "Terug" button (see below) — i.e. leaving before it's
+// won — costs -100 chips, same "quitter's penalty" idea as a real
+// table game. Chips only exist/persist when logged in (same
+// passphrase system as BlackJack); as a guest, chips just aren't
+// shown at all — there's nothing meaningful to track without a
+// saved balance, and guests were never blocked from just closing
+// the tab anyway. Uses the SAME Cloudflare Worker + KV balance as
+// BlackJack (see blackjack.js) — one shared "chips" pool per person,
+// spent/won across both games. Never lets a balance drop below 0.
+//
 // DOUBLE-CLICK: double-clicking a movable card/run auto-moves it to
 // the best legal destination. It first looks for a destination pile
 // whose top card matches by COLOUR (red/black) one rank higher; if
@@ -48,10 +59,10 @@
 // alternate look for aces, jacks/queens/kings, and jokers (jokers
 // aren't used here, but the folder is shared). Logged-in players get
 // that variant for those ranks; everything else looks the same
-// either way. This game has no score/balance to save, so login here
-// only ever changes the card art — same passphrase system as
-// BlackJack/the photo gallery, kept in its own localStorage key so
-// the three logins stay independent sessions.
+// either way. Login here ALSO unlocks the shared chip balance
+// described above — same passphrase system as BlackJack/the photo
+// gallery, kept in its own localStorage key so the three logins stay
+// independent sessions.
 // =================================================================
 
 import { siteRootUrl } from './utils.js';
@@ -65,6 +76,8 @@ const RED_SUITS = new Set(['hearts', 'diamonds']);
 const RANKS = ['ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king'];
 const SPECIAL_RANKS = new Set(['ace', 'jack', 'queen', 'king', 'joker']);
 const TOTAL_SEQUENCES = 4; // whole deck = 4 King-to-Ace runs
+const WIN_PAYOUT = 1000;
+const QUIT_PENALTY = 100;
 
 /** Ace-low rank index (ace=1 ... king=13) — sequences run King down to Ace. */
 function rankIndex(rank) {
@@ -122,17 +135,23 @@ export function initSpiderette() {
   const passphraseInput = document.getElementById('spiPassphrase');
   const loginError = document.getElementById('spiLoginError');
 
+  const chipsBar = document.getElementById('spiChipsBar');
+  const balanceEl = document.getElementById('spiBalance');
+
   const statusEl = document.getElementById('spiStatus');
   const stockEl = document.getElementById('spiStock');
   const stockCountEl = document.getElementById('spiStockCount');
   const completedEl = document.getElementById('spiCompleted');
   const boardEl = document.getElementById('spiBoard');
   const newGameBtn = document.getElementById('spiNewGame');
+  const backBtn = document.getElementById('spiBackBtn');
   const winOverlay = document.getElementById('spiWinOverlay');
   const winPlayAgainBtn = document.getElementById('spiWinPlayAgain');
+  const winPayoutEl = document.getElementById('spiWinPayout');
 
   // ---- state ----
   let auth = null; // { token, who, exp } | null
+  let balance = null; // only meaningful when logged in
   let stock = [];
   let stockWaveIndex = 0; // how many waves have been dealt so far
   let columns = []; // 7 arrays of { rank, suit, faceUp }
@@ -140,6 +159,7 @@ export function initSpiderette() {
   let selection = null; // { col, index } | null
   let stockRemoved = false; // true once the stock is pulled from play
   let gameOver = false;
+  let gameSettled = false; // true once this game's chip win/loss has already been applied (guards double-counting)
 
   function isLoggedIn() {
     return Boolean(auth);
@@ -175,11 +195,13 @@ export function initSpiderette() {
       guestBadge.classList.add('hidden');
       loggedInBadge.classList.remove('hidden');
       loginForm.classList.add('hidden');
+      chipsBar.classList.remove('hidden');
       const labels = siteConfig.spiderette?.personLabels || {};
       whoLabel.textContent = labels[auth.who] || auth.who;
     } else {
       guestBadge.classList.remove('hidden');
       loggedInBadge.classList.add('hidden');
+      chipsBar.classList.add('hidden');
     }
   }
 
@@ -217,6 +239,7 @@ export function initSpiderette() {
       storeAuth({ token: data.token, who: data.who, exp: data.exp });
       passphraseInput.value = '';
       updateAuthUI();
+      await loadChips();
       renderBoard(); // re-render with the special-cards art
     } catch {
       loginError.textContent = 'Geen verbinding, probeer het later opnieuw.';
@@ -225,8 +248,57 @@ export function initSpiderette() {
 
   function logout() {
     clearAuth();
+    balance = null;
     updateAuthUI();
     renderBoard();
+  }
+
+  // -----------------------------------------------------------------
+  // CHIPS (shared balance with BlackJack — same Worker/KV key per person)
+  // -----------------------------------------------------------------
+  async function loadChips() {
+    if (!isLoggedIn() || !workerUrl) return;
+    try {
+      const response = await fetch(`${workerUrl}/chips`, {
+        headers: { Authorization: `Bearer ${auth.token}` },
+      });
+      if (!response.ok) {
+        if (response.status === 401) logout();
+        return;
+      }
+      const data = await response.json();
+      balance = data.chips;
+      updateBalanceUI();
+    } catch {
+      // Offline/unreachable: keep whatever balance we last knew about.
+    }
+  }
+
+  async function saveChips() {
+    if (!isLoggedIn() || !workerUrl || balance === null) return;
+    try {
+      await fetch(`${workerUrl}/chips`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+        body: JSON.stringify({ chips: balance }),
+      });
+    } catch {
+      // Best-effort — a failed save just means next load reflects the
+      // last successfully-saved amount; nothing crashes locally.
+    }
+  }
+
+  function updateBalanceUI() {
+    if (balance === null) return;
+    balanceEl.textContent = String(balance);
+  }
+
+  /** Applies a chip delta, clamped so the balance can never go below 0, then persists it. */
+  function applyChipDelta(delta) {
+    if (!isLoggedIn() || balance === null) return;
+    balance = Math.max(0, balance + delta);
+    updateBalanceUI();
+    saveChips();
   }
 
   // -----------------------------------------------------------------
@@ -248,6 +320,7 @@ export function initSpiderette() {
     selection = null;
     stockRemoved = false;
     gameOver = false;
+    gameSettled = false;
     hideWinOverlay();
     setStatus('Klik een kaart om te kiezen, klik een stapel om ‘m neer te leggen. Dubbelklik voor een automatische zet.');
     renderBoard();
@@ -327,11 +400,18 @@ export function initSpiderette() {
   }
 
   // -----------------------------------------------------------------
-  // WIN / GAME OVER
+  // WIN / GAME OVER / CHIP PAYOUTS
   // -----------------------------------------------------------------
   function triggerWin() {
     gameOver = true;
     selection = null;
+    if (!gameSettled && isLoggedIn()) {
+      gameSettled = true;
+      applyChipDelta(WIN_PAYOUT);
+    }
+    if (winPayoutEl) {
+      winPayoutEl.textContent = isLoggedIn() ? `Je wint ${WIN_PAYOUT} chips! 🪙` : '';
+    }
     showWinOverlay();
   }
 
@@ -341,6 +421,22 @@ export function initSpiderette() {
 
   function hideWinOverlay() {
     if (winOverlay) winOverlay.classList.add('hidden');
+  }
+
+  /** "Terug" button: leaving a game that isn't won yet costs a small chip
+   *  penalty (same idea as walking away from a real table mid-hand) —
+   *  never applied if the game was already won, already settled, or if
+   *  there's no game in progress yet (e.g. clicking it on a fresh deal
+   *  before touching anything still counts as abandoning, deliberately —
+   *  keeps the rule simple and unambiguous). Guests have no balance, so
+   *  nothing happens for them beyond navigating away. */
+  function handleBackClick() {
+    const gameInProgress = columns.length > 0 && !gameOver;
+    if (gameInProgress && !gameSettled && isLoggedIn()) {
+      gameSettled = true;
+      applyChipDelta(-QUIT_PENALTY);
+    }
+    window.location.href = siteRootUrl('games-hub.html');
   }
 
   // -----------------------------------------------------------------
@@ -549,6 +645,7 @@ export function initSpiderette() {
   stockEl.addEventListener('click', dealFromStock);
   newGameBtn.addEventListener('click', dealNewGame);
   if (winPlayAgainBtn) winPlayAgainBtn.addEventListener('click', dealNewGame);
+  if (backBtn) backBtn.addEventListener('click', handleBackClick);
 
   showLoginBtn.addEventListener('click', showLoginForm);
   cancelLoginBtn.addEventListener('click', hideLoginForm);
@@ -558,11 +655,15 @@ export function initSpiderette() {
     login(passphraseInput.value.trim());
   });
 
+  // ---- init ----
   const storedAuth = loadStoredAuth();
   if (storedAuth) {
     auth = storedAuth;
+    updateAuthUI();
+    loadChips();
+  } else {
+    updateAuthUI();
   }
-  updateAuthUI();
 
   dealNewGame();
 }

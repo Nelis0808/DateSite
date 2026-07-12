@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<!--
+  ONZE REIZEN — WORLD MAP PAGE
+  Landing page for the travel section: a stylized world map with a
+  pin per country in assets/data/travel-countries.json. Click a pin
+  to select it, double-click (or use the "Bekijk land" button that
+  appears) to zoom into that country's city overview at
+  reizen/land.html?iso=XX. Logic lives in assets/js/modules/reizen.js
+  — this file only contains the map frame + selected-country card.
+
+  Lives at the site root (like index.html, games-hub.html, ...) —
+  the country-specific pages live one level down in reizen/ (see
+  reizen/land.html), same split as games-hub.html vs games/*.html.
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Een interactieve kaart van alle landen waar we zijn geweest en nog naartoe willen.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>Onze Reizen</title>
+
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/reizen.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om de kaart te tonen.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>🌍 Onze Reizen</h1>
+        <p>Klik een land om te selecteren, dubbelklik om in te zoomen naar de steden.</p>
+      </div>
+    </section>
+
+    <section class="container" id="reizenApp">
+      <p id="reizenStatus" class="rz-status" aria-live="polite">Landen laden…</p>
+
+      <div id="reizenMapFrame" class="rz-map-frame">
+        <img src="assets/icons/reizen/world-map.svg" alt="" class="rz-map-bg" aria-hidden="true">
+        <!-- Country pins injected directly into this frame by assets/js/modules/reizen.js -->
+      </div>
+
+      <div class="rz-legend">
+        <span class="rz-legend-item"><span class="rz-legend-dot rz-legend-dot-visited" aria-hidden="true"></span> Al geweest</span>
+        <span class="rz-legend-item"><span class="rz-legend-dot rz-legend-dot-wishlist" aria-hidden="true"></span> Verlanglijstje</span>
+      </div>
+
+      <div id="reizenSelectedCard" class="rz-selected-card hidden">
+        <div>
+          <h3 id="reizenSelectedName"></h3>
+          <p id="reizenSelectedMeta"></p>
+        </div>
+        <button id="reizenViewCountry" class="btn btn-primary" type="button">Bekijk land &rarr;</button>
+      </div>
+    </section>
+  </main>
+
+  <div data-include="chrome-end"></div>
+
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

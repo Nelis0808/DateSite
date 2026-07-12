@@ -4,7 +4,7 @@
    Two synced columns (Kalina left, Niels right), each a vertical
    list of link cards with a thumbnail resolved by the gifts
    Worker (custom photo, else a scraped og:image, else a plain
-   🎁 fallback).
+   🎁 fallback), plus an edit(✏️)/delete(✕) button pair per card.
    ============================================================= */
 
 #giftsApp {
@@ -62,7 +62,7 @@
   flex: 1;
   min-width: 0;
   padding: var(--space-3);
-  padding-right: var(--space-8); /* room for the delete button */
+  padding-right: var(--space-9); /* room for the edit+delete button pair */
   color: inherit;
   text-decoration: none;
 }
@@ -122,10 +122,18 @@
   overflow-wrap: anywhere;
 }
 
-.gf-delete {
+/* == CARD ACTIONS (edit + delete, stacked top-right) == */
+.gf-card-actions {
   position: absolute;
   top: var(--space-3);
   right: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.gf-edit,
+.gf-delete {
   flex-shrink: 0;
   width: 32px;
   height: 32px;
@@ -136,6 +144,12 @@
   line-height: 1;
   box-shadow: var(--shadow-sm);
   transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.gf-edit:hover,
+.gf-edit:focus-visible {
+  background: var(--color-primary);
+  color: var(--color-white);
 }
 
 .gf-delete:hover,
@@ -149,7 +163,11 @@
   margin-bottom: var(--space-5);
 }
 
-/* == ADD FORM == */
+/* == ADD/EDIT FORM ==
+   The exact same form doubles as the edit form (see gifts.js's
+   enterEditMode) — .gf-add-form-editing marks it visually while a
+   card is being edited, so it's obvious the form isn't in its
+   normal "add something new" state. */
 .gf-add-form {
   display: flex;
   flex-direction: column;
@@ -158,9 +176,17 @@
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
   padding: var(--space-4);
+  transition: box-shadow var(--transition-fast), outline var(--transition-fast);
 }
 
-.gf-add-form input {
+.gf-add-form-editing {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  box-shadow: var(--shadow);
+}
+
+.gf-add-form input[type='url'],
+.gf-add-form input[type='text'] {
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
@@ -169,8 +195,28 @@
   min-height: 44px;
 }
 
-.gf-add-form .btn {
+.gf-add-photo-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.gf-add-photo-label input[type='file'] {
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+}
+
+.gf-add-form-buttons {
+  display: flex;
+  gap: var(--space-3);
   align-self: flex-end;
+}
+
+.gf-edit-cancel {
+  padding: 14px 20px;
 }
 
 .gf-add-error {
@@ -202,7 +248,13 @@
 
 @media (max-width: 480px) {
   .gf-card-link {
-    padding-right: var(--space-7);
+    padding-right: var(--space-8);
+  }
+
+  .gf-add-form-buttons {
+    width: 100%;
+    align-self: stretch;
+    flex-direction: column;
   }
 }
 

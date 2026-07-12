@@ -31,6 +31,16 @@
 //      manually topped up from the Cloudflare KV dashboard (see
 //      STAPPENPLAN-BLACKJACK.md).
 //
+// CHIP SAFETY: the balance can NEVER go negative, in either the
+// guest or logged-in path. Doubling down is only offered (the button
+// is only enabled) when the player can actually cover double the
+// current bet, and the bet itself is clamped to whatever the player
+// can currently afford whenever a chip is added to the tray or a
+// double is confirmed — see canAffordDouble()/placeBet()/double()
+// below. Every balance mutation additionally goes through
+// clampChips(), a last-line-of-defense floor at 0, so no code path
+// (now or added later) can silently push a balance below zero.
+//
 // AUTH: identical token scheme to photo-gallery.js (passphrase ->
 // signed token -> kept in localStorage under its own key so logging
 // into BlackJack and logging into the photo gallery are completely
@@ -111,6 +121,11 @@ function handValue(cards) {
 
 function isBlackjack(cards) {
   return cards.length === 2 && handValue(cards) === 21;
+}
+
+/** Floors a chip amount at 0 — the one place every balance mutation must pass through, so no code path can ever leave it negative. */
+function clampChips(amount) {
+  return Math.max(0, Math.floor(amount));
 }
 
 export function initBlackjack() {
@@ -265,7 +280,11 @@ export function initBlackjack() {
         return;
       }
       const data = await response.json();
-      balance = data.chips;
+      balance = clampChips(data.chips);
+      // The bet from a previous session can never legitimately exceed
+      // the freshly-loaded balance — clamp defensively in case chips
+      // were manually lowered in the KV dashboard while a bet was mid-air.
+      bet = Math.min(bet, balance);
       updateBalanceUI();
     } catch {
       // Offline/unreachable: keep whatever balance we last knew about.
@@ -290,7 +309,7 @@ export function initBlackjack() {
     balanceEl.textContent = String(balance);
     betEl.textContent = String(bet);
     updateChipTrayState();
-    dealBtn.disabled = bet <= 0 || handInProgress;
+    dealBtn.disabled = bet <= 0 || bet > balance || handInProgress;
   }
 
   // -----------------------------------------------------------------
@@ -321,8 +340,13 @@ export function initBlackjack() {
   }
 
   function placeBet(value) {
-    if (value > balance - bet) return; // can't bet more chips than you have
-    bet += value;
+    if (value <= 0) return;
+    // Never let the bet exceed what's actually in the balance — chips
+    // that would push past it are simply refused rather than clamped,
+    // so the tray's own disabled state (updateChipTrayState) and this
+    // guard always agree with each other.
+    if (value > balance - bet) return;
+    bet = Math.min(bet + value, balance);
     updateBalanceUI();
   }
 
@@ -330,6 +354,11 @@ export function initBlackjack() {
     if (handInProgress) return;
     bet = 0;
     updateBalanceUI();
+  }
+
+  /** True only when doubling is both a legal blackjack move (first decision, exactly 2 cards) AND actually affordable (balance covers a second matching bet on top of the first). */
+  function canAffordDouble() {
+    return playerHand.length === 2 && balance >= bet * 2 && bet > 0;
   }
 
   // -----------------------------------------------------------------
@@ -381,7 +410,17 @@ export function initBlackjack() {
   function setActionButtonsEnabled(enabled) {
     hitBtn.disabled = !enabled;
     standBtn.disabled = !enabled;
-    doubleBtn.disabled = !enabled || balance < bet || playerHand.length !== 2;
+    doubleBtn.disabled = !enabled || !canAffordDouble();
+  }
+
+  /** Smoothly scrolls the table into view once it's been unhidden and
+   *  rendered — deferred one animation frame so the browser has laid
+   *  out the now-visible table before we ask it to scroll, otherwise
+   *  scrollIntoView can measure the pre-reveal (zero-height) position. */
+  function scrollToTable() {
+    requestAnimationFrame(() => {
+      table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   function dealHand() {
@@ -398,6 +437,7 @@ export function initBlackjack() {
     clearBetBtn.disabled = true;
     nextHandBtn.classList.add('hidden');
     renderHands();
+    scrollToTable();
 
     const playerBJ = isBlackjack(playerHand);
     const dealerBJ = isBlackjack(dealerHand);
@@ -433,7 +473,7 @@ export function initBlackjack() {
   }
 
   function double() {
-    if (!handInProgress || balance < bet || playerHand.length !== 2) return;
+    if (!handInProgress || !canAffordDouble()) return;
     bet *= 2;
     updateBalanceUI();
     playerHand.push(deck.pop());
@@ -478,12 +518,16 @@ export function initBlackjack() {
     handInProgress = false;
     setActionButtonsEnabled(false);
 
+    // Every branch below goes through clampChips() — belt-and-braces
+    // on top of the affordability checks earlier (placeBet/double
+    // already prevent betting more than the balance), so a balance
+    // can never end up negative even if those checks are ever loosened.
     if (outcome === 'blackjack') {
-      balance += Math.floor(bet * 1.5);
+      balance = clampChips(balance + bet * 1.5);
     } else if (outcome === 'win') {
-      balance += bet;
+      balance = clampChips(balance + bet);
     } else if (outcome === 'lose') {
-      balance -= bet;
+      balance = clampChips(balance - bet);
     }
     // 'push': balance unchanged, bet effectively returned.
 

@@ -9,6 +9,14 @@
 // Wordle: length+1 guesses, green/yellow/gray feedback, on-screen +
 // physical keyboard support.
 //
+// INVALID-WORD FEEDBACK: submitting a full-length guess that isn't a
+// real word does two things at once — the row's cells get a
+// persistent red border (markRowInvalid, cleared the moment the
+// player edits that row again — see clearInvalidRow), AND the Enter
+// key itself briefly flashes red (flashEnterInvalid) so the
+// rejection is obviously tied to the action that triggered it, not
+// just something that happened somewhere on the board.
+//
 // Data file is shared with hangman.js (assets/js/modules/hangman.js)
 // — same JSON, same shape:
 //   { "4": { "A": [...], "B": [...], ... }, "5": { ... }, ... }
@@ -21,6 +29,7 @@ const DATA_URL = new URL('../../data/word-list.json', import.meta.url);
 const MIN_LEN = 4;
 const MAX_LEN = 10;
 const LENGTH_STORAGE_KEY = 'wordleLength';
+const ENTER_FLASH_MS = 500;
 
 const KEYBOARD_ROWS = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
@@ -193,6 +202,10 @@ export function initWordle() {
     return grid.querySelector(`.wordle-cell[data-row="${row}"][data-col="${col}"]`);
   }
 
+  function enterKeyEl() {
+    return keyboard.querySelector('.wordle-key-enter');
+  }
+
   function updateCurrentRow() {
     for (let col = 0; col < wordLength; col++) {
       const cell = cellAt(guessRow, col);
@@ -222,6 +235,21 @@ export function initWordle() {
     }
   }
 
+  /** Brief red-border flash directly on the Enter key itself, so the
+   *  rejection reads as "that Enter press didn't work" rather than
+   *  only showing up somewhere else on the board. Self-clears after
+   *  ENTER_FLASH_MS — deliberately NOT persistent like markRowInvalid,
+   *  since the key itself isn't in a stuck/invalid state, only that
+   *  one press was rejected. */
+  function flashEnterInvalid() {
+    const enterKey = enterKeyEl();
+    if (!enterKey) return;
+    enterKey.classList.remove('wordle-key-enter-invalid'); // restart the animation if still mid-flash from a rapid double Enter
+    void enterKey.offsetWidth; // force reflow so re-adding the class below re-triggers the CSS transition
+    enterKey.classList.add('wordle-key-enter-invalid');
+    setTimeout(() => enterKey.classList.remove('wordle-key-enter-invalid'), ENTER_FLASH_MS);
+  }
+
   function keyEl(letter) {
     return keyboard.querySelector(`.wordle-key[data-key="${letter}"]`);
   }
@@ -231,6 +259,7 @@ export function initWordle() {
     if (currentGuess.length !== wordLength) {
       updateStatus(`Woord moet ${wordLength} letters lang zijn.`);
       shakeCurrentRow();
+      flashEnterInvalid();
       return;
     }
     if (!validGuesses.has(currentGuess)) {
@@ -240,6 +269,7 @@ export function initWordle() {
       updateStatus('Onbekend woord — probeer een ander.');
       shakeCurrentRow();
       markRowInvalid();
+      flashEnterInvalid();
       return;
     }
 

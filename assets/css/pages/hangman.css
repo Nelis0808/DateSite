@@ -1,8 +1,9 @@
 /* =============================================================
-   PAGE: HANGMAN (games/hangman.html)
+   PAGE: HANGMAN (games/hangman.html, games/hangman-custom.html)
    Reuses .wordle-length-pill / .ttt-status / .ttt-actions from
    wordle.css and games.css — only the drawing, word display, and
-   A-Z keyboard live here.
+   A-Z keyboard live here (plus, below, the extra setup-screen bits
+   used only by the custom-word variant).
    ============================================================= */
 
 .hangman-drawing {
@@ -25,6 +26,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: flex-end;
   gap: var(--space-2);
   margin-bottom: var(--space-6);
 }
@@ -46,6 +48,16 @@
 .hangman-letter-box-revealed {
   color: var(--color-danger);
   border-bottom-color: var(--color-danger);
+}
+
+/* Visible gap for a space in a multi-word phrase (custom-word
+   variant only) — no border/box, just breathing room so the
+   phrase visually reads as separate words, and it never counts
+   as a guessable/revealable letter. */
+.hangman-word-space {
+  width: var(--space-4);
+  height: 48px;
+  flex-shrink: 0;
 }
 
 /* == A-Z KEYBOARD == */
@@ -90,6 +102,51 @@
   opacity: 0.6;
 }
 
+/* == CUSTOM-WORD SETUP SCREEN (games/hangman-custom.html only) == */
+.hc-setup-notice {
+  text-align: center;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  padding: var(--space-4) var(--space-5);
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+  margin-bottom: var(--space-6);
+}
+
+.hc-stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.hc-stepper input[type='range'] {
+  width: 160px;
+  accent-color: var(--color-primary);
+}
+
+.hc-stepper-value {
+  min-width: 1.5em;
+  text-align: center;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--color-primary);
+}
+
+.hc-word-input {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  margin-inline: auto;
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: center;
+  letter-spacing: 0.3em;
+}
+
 @media (max-width: 480px) {
   .hangman-key {
     width: 32px;
@@ -98,6 +155,11 @@
 
   .hangman-letter-box {
     width: 32px;
+    height: 40px;
+  }
+
+  .hangman-word-space {
+    width: var(--space-3);
     height: 40px;
   }
 }

@@ -1,0 +1,87 @@
+/* =============================================================
+   PAGE: WALLZ (games/wallz.html)
+   Reuses .ttt-scoreboard / .ttt-status / .ttt-actions from
+   games.css, and the .switch toggle look from
+   components/settings.css — only the board + trail styling and the
+   inline settings row live here.
+   ============================================================= */
+
+.wallz-settings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  width: fit-content;
+  margin-inline: auto;
+}
+
+/* == BOARD ==
+   --wallz-cols/--wallz-rows set inline by wallz.js. Each cell is a
+   plain square div; painted via className swaps each tick rather
+   than re-creating the grid (see wallz.js's paintCell/buildHeadCell). */
+.wallz-board {
+  --wallz-cols: 30;
+  --wallz-rows: 20;
+  display: grid;
+  grid-template-columns: repeat(var(--wallz-cols), 1fr);
+  grid-template-rows: repeat(var(--wallz-rows), 1fr);
+  gap: 1px;
+  width: 100%;
+  max-width: 780px;
+  aspect-ratio: var(--wallz-cols) / var(--wallz-rows);
+  margin-inline: auto;
+  margin-bottom: var(--space-6);
+  padding: var(--space-2);
+  background: var(--color-primary);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.wallz-cell {
+  background: var(--color-surface);
+  border-radius: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wallz-cell-p1-trail {
+  background: var(--color-secondary);
+}
+
+.wallz-cell-p2-trail {
+  background: var(--color-accent);
+}
+
+.wallz-cell-p1-head,
+.wallz-cell-p2-head {
+  position: relative;
+  z-index: 2;
+}
+
+.wallz-cell-p1-head {
+  background: var(--color-secondary);
+}
+
+.wallz-cell-p2-head {
+  background: var(--color-accent);
+}
+
+.wallz-head-img {
+  width: 130%;
+  height: 130%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35));
+}
+
+@media (max-width: 600px) {
+  .wallz-board {
+    padding: var(--space-1);
+    gap: 0.5px;
+  }
+}

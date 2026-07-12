@@ -59,6 +59,13 @@ export const siteConfig = {
       status: 'available',
     },
     {
+      title: 'Onze Reizen',
+      description: 'Een interactieve kaart van waar we zijn geweest.',
+      href: 'reizen.html',
+      emoji: '🌍',
+      status: 'available',
+    },
+    {
       title: 'Games',
       description: 'Speel samen een potje, direct in de browser.',
       href: 'games-hub.html',
@@ -73,15 +80,16 @@ export const siteConfig = {
       status: 'available',
     },
     {
+      title: 'Cadeau Ideeën',
+      description: 'Voor de volgende gelegenheid.',
+      href: 'gifts.html',
+      emoji: '🎁',
+      status: 'available',
+    },
+    {
       title: 'Bucket List',
       description: 'Dingen die we samen willen doen.',
       emoji: '📝',
-      status: 'coming-soon',
-    },
-    {
-      title: 'Reis Ideeën',
-      description: 'Waar gaan we naartoe?',
-      emoji: '✈️',
       status: 'coming-soon',
     },
     {
@@ -95,13 +103,6 @@ export const siteConfig = {
       description: 'Onze muziek, samen gemaakt.',
       emoji: '🎵',
       status: 'coming-soon',
-    },
-    {
-      title: 'Cadeau Ideeën',
-      description: 'Voor de volgende gelegenheid.',
-      href: 'gifts.html',
-      emoji: '🎁',
-      status: 'available',
     },
     {
       title: 'Verrassingen',
@@ -131,8 +132,11 @@ export const siteConfig = {
     defaultCountry: 'NL',
   },
 
-  // Config for the private photo gallery (assets/js/modules/photo-gallery.js).
-  // PHOTO_GALLERY.md for usage.
+  // Config for the private photo gallery (assets/js/modules/photo-gallery.js)
+  // AND for the "Onze Reizen" country view (assets/js/modules/reizen-land.js),
+  // which reuses this exact same Worker's public /travel endpoint plus
+  // the logged-in session for showing real thumbnails per city.
+  // PHOTO_GALLERY.md / STAPPENPLAN-REIZEN.md for usage.
   photos: {
     workerUrl: 'https://photo-gallery.niels-luijten7.workers.dev',
     personLabels: {

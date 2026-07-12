@@ -11,11 +11,12 @@
 import { escapeHtml, siteRootUrl } from './utils.js';
 
 // Plain emoji per game — matches the original, simple hub style. The one
-// exception is connect4: there's no "pink circle" emoji to pair with
-// blue's 🔵, so it uses the same matched-scale SVG pair connect4.js uses
-// for the in-game avatars (assets/icons/connect4/player-blue.svg /
-// player-pink.svg — identical viewBox, radius, and ring style, so they
-// line up pixel-for-pixel at any size via the .emoji-icon class).
+// exception is connect4/wallz: there's no "pink circle" emoji to pair
+// with blue's 🔵, so both use the same matched-scale SVG pair
+// connect4.js uses for the in-game avatars (assets/icons/connect4/
+// player-blue.svg / player-pink.svg — identical viewBox, radius, and
+// ring style, so they line up pixel-for-pixel at any size via the
+// .emoji-icon class).
 const games = [
   {
     title: 'Boter, Kaas & Eieren',
@@ -32,6 +33,13 @@ const games = [
     status: 'available',
   },
   {
+    title: 'Wallz',
+    description: 'Laat een muur achter je en probeer de ander erin te laten crashen.',
+    href: 'games/wallz.html',
+    emoji: `<img src="${siteRootUrl('assets/icons/connect4/player-blue.svg')}" alt="" class="emoji-icon"><img src="${siteRootUrl('assets/icons/connect4/player-pink.svg')}" alt="" class="emoji-icon">`,
+    status: 'available',
+  },
+  {
     title: 'Wordle',
     description: 'Raad het Engelse woord. Kies zelf hoeveel letters (4 t/m 10).',
     href: 'games/wordle.html',
@@ -43,6 +51,13 @@ const games = [
     description: 'Raad het woord voordat het poppetje af is.',
     href: 'games/hangman.html',
     emoji: '✏️',
+    status: 'available',
+  },
+  {
+    title: 'Galgje — Eigen Woord',
+    description: 'Speler 1 verzint een woord, Speler 2 raadt het. Zelf instelbaar aantal fouten.',
+    href: 'games/hangman-custom.html',
+    emoji: '🙈',
     status: 'available',
   },
   {

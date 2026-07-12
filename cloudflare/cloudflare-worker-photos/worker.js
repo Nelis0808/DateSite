@@ -20,14 +20,26 @@
 //   POST /login                  { passphrase } -> { token, who }
 //   GET  /photos                 (auth)         -> { photos: [...] }
 //   GET  /photos/object?key=...  (auth)         -> raw image bytes
+//   GET  /travel?country=XX      (PUBLIC)       -> { cities: [...] }  (see below)
 //
 // CAPTIONS: captions.json (uploaded to the same private R2 bucket,
-// see PHOTO-GALLERY.md) maps each filename to a [short, long]
-// array — short shows under the thumbnail, long shows in the
-// lightbox when the photo is clicked:
+// see PHOTO-GALLERY.md) maps each filename to a caption array:
 //   { "img.jpg": ["Short description", "Longer description..."] }
-// A plain string value (the old format) still works and is used for
-// both the short and long caption. See captions.example.json.
+// As of the "Onze Reizen" feature, TWO more optional fields can
+// follow — a country and a specific place within it:
+//   { "img.jpg": ["Short", "Longer...", "Portugal", "Lissabon"] }
+// Not every photo needs them — entries with only 2 elements (or a
+// plain string, the old format) simply never show up on the travel
+// map, they still work exactly as before on photos.html.
+//
+// /travel IS DELIBERATELY PUBLIC (no Authorization header, no
+// passphrase check) — it powers reizen/land.html's city-pin
+// overview, which is meant to be a fun "look where we've been"
+// teaser visible to anyone, unlike the actual photo bytes. It only
+// ever returns city names + photo counts + a "visited" flag, NEVER
+// filenames, captions, or anything that could be used to fetch a
+// real image — so it can't be used to bypass the login on
+// /photos or /photos/object above.
 // =================================================================
 
 const ALLOWED_ORIGINS = [
@@ -149,6 +161,33 @@ function isImageKey(key) {
   return Object.prototype.hasOwnProperty.call(IMAGE_CONTENT_TYPES, ext);
 }
 
+/** Normalizes one captions.json entry (array of 2-4 strings, or a legacy plain string) into { caption, captionLong, country, place }. */
+function parseCaptionEntry(raw) {
+  if (Array.isArray(raw)) {
+    const [caption = '', captionLong = '', country = '', place = ''] = raw;
+    return {
+      caption,
+      captionLong: captionLong || caption,
+      country: country || '',
+      place: place || '',
+    };
+  }
+  if (typeof raw === 'string') {
+    return { caption: raw, captionLong: raw, country: '', place: '' };
+  }
+  return { caption: '', captionLong: '', country: '', place: '' };
+}
+
+async function loadCaptions(bucket) {
+  try {
+    const captionsObj = await bucket.get('captions.json');
+    if (!captionsObj) return {};
+    return JSON.parse(await captionsObj.text());
+  } catch {
+    return {}; // missing/invalid captions.json is fine — photos just show without one
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const origin = request.headers.get('Origin') || '';
@@ -157,6 +196,41 @@ export default {
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers });
+    }
+
+    // ---- GET /travel?country=XX : PUBLIC, no auth — see file header ----
+    // Returns only city names + photo counts for the given country,
+    // built from captions.json's optional 3rd/4th fields. Never
+    // returns filenames or anything usable to fetch a real photo.
+    if (url.pathname === '/travel' && request.method === 'GET') {
+      if (!env.PHOTOS_BUCKET) {
+        return jsonResponse({ error: 'Server misconfigured: R2 bucket not bound' }, 500, headers);
+      }
+
+      const wantedCountry = (url.searchParams.get('country') || '').trim().toLowerCase();
+      if (!wantedCountry) {
+        return jsonResponse({ error: 'Ontbrekende "country" parameter' }, 400, headers);
+      }
+
+      const captions = await loadCaptions(env.PHOTOS_BUCKET);
+      const cityCounts = new Map(); // place (lowercased) -> { name, count }
+
+      for (const raw of Object.values(captions)) {
+        const { country, place } = parseCaptionEntry(raw);
+        if (!country || !place) continue;
+        if (country.trim().toLowerCase() !== wantedCountry) continue;
+
+        const key = place.trim().toLowerCase();
+        const existing = cityCounts.get(key);
+        if (existing) existing.count += 1;
+        else cityCounts.set(key, { name: place.trim(), count: 1 });
+      }
+
+      const cities = Array.from(cityCounts.values())
+        .map((city) => ({ ...city, visited: true })) // every captioned city is, by definition, a place we've actually been
+        .sort((a, b) => b.count - a.count);
+
+      return jsonResponse({ cities }, 200, { ...headers, 'Cache-Control': 'public, max-age=300' });
     }
 
     if (!env.TOKEN_SECRET || !env.PASSPHRASE_A || !env.PASSPHRASE_B) {
@@ -198,32 +272,13 @@ export default {
       // ---- GET /photos : list available photos + optional captions ----
       if (url.pathname === '/photos' && request.method === 'GET') {
         const listing = await env.PHOTOS_BUCKET.list();
-        let captions = {};
-        try {
-          const captionsObj = await env.PHOTOS_BUCKET.get('captions.json');
-          if (captionsObj) captions = JSON.parse(await captionsObj.text());
-        } catch {
-          // Missing/invalid captions.json is fine — photos just show without a caption.
-        }
+        const captions = await loadCaptions(env.PHOTOS_BUCKET);
 
         const photos = listing.objects
           .filter((obj) => isImageKey(obj.key))
           .map((obj) => {
-            const raw = captions[obj.key];
-            let caption = '';
-            let captionLong = '';
-
-            if (Array.isArray(raw)) {
-              // New format: ["short", "long"]
-              caption = raw[0] || '';
-              captionLong = raw[1] || caption;
-            } else if (typeof raw === 'string') {
-              // Old format: a single string, used for both.
-              caption = raw;
-              captionLong = raw;
-            }
-
-            return { key: obj.key, caption, captionLong, uploaded: obj.uploaded };
+            const { caption, captionLong, country, place } = parseCaptionEntry(captions[obj.key]);
+            return { key: obj.key, caption, captionLong, country, place, uploaded: obj.uploaded };
           })
           .sort((a, b) => new Date(b.uploaded) - new Date(a.uploaded)); // newest first
 
@@ -241,11 +296,12 @@ export default {
         if (!object) return jsonResponse({ error: 'Foto niet gevonden' }, 404, headers);
 
         // IMPORTANT: no shared/edge caching here (unlike the Ticketmaster
-        // proxy). These bytes are only supposed to be visible to someone
-        // who already proved they know a passphrase — caching by URL
-        // alone at Cloudflare's shared edge would let a second, unverified
-        // visitor read a cached copy without ever logging in. Browser-level
-        // private caching is fine (it's scoped to this one visitor).
+        // proxy, and unlike /travel above). These bytes are only supposed
+        // to be visible to someone who already proved they know a
+        // passphrase — caching by URL alone at Cloudflare's shared edge
+        // would let a second, unverified visitor read a cached copy
+        // without ever logging in. Browser-level private caching is fine
+        // (it's scoped to this one visitor).
         return new Response(object.body, {
           status: 200,
           headers: {

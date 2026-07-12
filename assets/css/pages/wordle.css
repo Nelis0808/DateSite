@@ -179,6 +179,8 @@
   background: radial-gradient(circle at center, var(--color-tertiary) 0%, var(--color-primary) 150%);
   color: var(--color-white);
   box-shadow: var(--shadow-sm);
+  border: 2px solid transparent;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color 0.15s ease;
 }
 
 .wordle-key-action:hover {
@@ -196,6 +198,21 @@
   flex: 1;
   max-width: none;
   font-size: 1.2rem;
+}
+
+/* Brief red-border flash on the Enter key itself when a submitted
+   guess is rejected (wrong length, or not a real word) — see
+   wordle.js's flashEnterInvalid(). Self-clearing, not persistent. */
+.wordle-key-enter-invalid {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 35%, transparent);
+  animation: wordle-key-invalid-shake 0.4s ease;
+}
+
+@keyframes wordle-key-invalid-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
 }
 
 .wordle-key-correct {
@@ -221,5 +238,11 @@
 
   .wordle-key-action {
     height: 52px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wordle-key-enter-invalid {
+    animation: none;
   }
 }

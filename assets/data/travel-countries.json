@@ -1,0 +1,19 @@
+{
+  "_comment": "Countries shown as pins on the world map (reizen.html). 'x'/'y' are percentage positions on the equirectangular world background (assets/icons/reizen/world-map.svg) — 0,0 is top-left, 100,100 is bottom-right. 'iso' must match the country name used in captions.json's 3rd caption field (case-insensitive match, see assets/js/modules/reizen-land.js). Add a country here the moment you have (or plan) photos captioned with it, even before you've actually been — status controls the pin's look.",
+  "countries": [
+    { "iso": "NL", "name": "Nederland",           "x": 50.9, "y": 24.0, "status": "visited" },
+    { "iso": "BE", "name": "België",              "x": 50.5, "y": 25.3, "status": "visited" },
+    { "iso": "DE", "name": "Duitsland",           "x": 52.5, "y": 23.8, "status": "visited" },
+    { "iso": "FR", "name": "Frankrijk",           "x": 49.3, "y": 27.0, "status": "visited" },
+    { "iso": "ES", "name": "Spanje",              "x": 47.8, "y": 30.5, "status": "visited" },
+    { "iso": "PT", "name": "Portugal",            "x": 46.3, "y": 30.2, "status": "visited" },
+    { "iso": "IT", "name": "Italië",              "x": 52.3, "y": 29.0, "status": "visited" },
+    { "iso": "GB", "name": "Verenigd Koninkrijk", "x": 48.6, "y": 22.8, "status": "visited" },
+    { "iso": "AT", "name": "Oostenrijk",          "x": 53.2, "y": 26.0, "status": "wishlist" },
+    { "iso": "CH", "name": "Zwitserland",         "x": 51.4, "y": 26.5, "status": "wishlist" },
+    { "iso": "GR", "name": "Griekenland",         "x": 55.5, "y": 30.8, "status": "wishlist" },
+    { "iso": "US", "name": "Verenigde Staten",    "x": 20.5, "y": 30.0, "status": "wishlist" },
+    { "iso": "JP", "name": "Japan",               "x": 86.5, "y": 30.5, "status": "wishlist" },
+    { "iso": "TH", "name": "Thailand",            "x": 76.5, "y": 42.0, "status": "wishlist" }
+  ]
+}

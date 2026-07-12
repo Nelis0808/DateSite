@@ -13,11 +13,12 @@
   function" pattern as every other game page (see blackjack.html for
   the near-identical login-bar structure).
 
-  LOGIN IS OPTIONAL: there's no balance to save here, so logging in
-  (same passphrase-based system as BlackJack/the photo gallery) only
-  unlocks the "special" card face variant (assets/icons/playing-cards/
-  special-cards/) for aces, faces, and jokers — number cards look the
-  same either way.
+  LOGIN IS OPTIONAL: logging in (same passphrase-based system as
+  BlackJack/the photo gallery) unlocks the "special" card face
+  variant (aces/faces/jokers) AND a shared chip balance with
+  BlackJack — winning a full game pays 1000 chips, leaving early via
+  "Terug" costs 100. As a guest you can still play, just without any
+  chips shown or tracked.
 
   Lives in the games/ subfolder, same relative-path rules as the
   other game pages (see tictactoe.html's comment for details).
@@ -64,10 +65,10 @@
     </section>
 
     <section class="container" id="spiApp">
-      <a href="../games-hub.html" class="btn btn-outline ttt-back">&larr; Terug naar Games</a>
+      <button id="spiBackBtn" type="button" class="btn btn-outline ttt-back">&larr; Terug naar Games</button>
 
       <!-- Login bar: guest by default, optional login for the
-           "special" card art only — see file header. -->
+           "special" card art + shared chip balance — see file header. -->
       <div id="spiAuthBar" class="spi-auth-bar">
         <div id="spiGuestBadge" class="spi-auth-status">
           🕶️ Je speelt als gast.
@@ -88,6 +89,12 @@
         <p id="spiLoginError" class="spi-login-error" aria-live="polite"></p>
       </div>
 
+      <!-- Chip balance, only shown when logged in (see spiderette.js's updateAuthUI). -->
+      <div id="spiChipsBar" class="spi-chips-bar hidden" aria-live="polite">
+        <span class="spi-chips-label">Chips</span>
+        <span id="spiBalance" class="spi-chips-value">0</span>
+      </div>
+
       <p id="spiStatus" class="ttt-status" aria-live="polite"></p>
 
       <!-- Stock (click to deal a wave of cards onto the columns, one
@@ -101,7 +108,7 @@
           <span id="spiStockCount" class="spi-stock-count">0</span>
         </button>
 
-        <div id="spiCompleted" class="spi-completed" aria-label="Voltooide reeksen"></div>
+        <div id="spiCompleted" class="spi-completed" aria-label="Voltooide reeksen">""</div>
       </div>
 
       <!-- Tableau -->
@@ -118,6 +125,7 @@
           <p class="spi-win-emoji" aria-hidden="true">🕷️🎉</p>
           <h2 id="spiWinTitle">Gewonnen!</h2>
           <p>Alle vier de reeksen zijn compleet. Goed gespeeld!</p>
+          <p id="spiWinPayout" class="spi-win-payout"></p>
           <button id="spiWinPlayAgain" class="btn btn-primary" type="button">Nog een keer spelen</button>
         </div>
       </div>

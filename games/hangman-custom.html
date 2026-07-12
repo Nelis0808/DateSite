@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<!--
+  GALGJE MET EIGEN WOORD PAGE
+  Two-player variant of Galgje (hangman.html): Player 1 types in any
+  word or phrase (spaces allowed) on a setup screen instead of the
+  game picking a random one, then Player 2 guesses it letter by
+  letter exactly like the classic version. A stepper on the setup
+  screen also lets Player 1 choose how many wrong guesses are
+  allowed (3-10) before starting. Logic lives in
+  assets/js/modules/hangman-custom.js — this file only contains the
+  two screens (setup / play) that module toggles via the `.hidden`
+  utility class, same pattern as tournament.html's three screens.
+
+  Lives in the games/ subfolder, same relative-path rules as
+  tictactoe.html (see the comment there for details). Shares
+  wordle.css's length-picker/stepper look and hangman.css's drawing/
+  keyboard styles rather than duplicating them.
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Galgje met een eigen woord: speler 1 verzint een woord, speler 2 raadt het.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>Galgje — Eigen Woord</title>
+
+  <link rel="icon" href="../assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/pages/games.css">
+  <link rel="stylesheet" href="../assets/css/pages/wordle.css">
+  <link rel="stylesheet" href="../assets/css/pages/hangman.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om te kunnen spelen.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>✏️ Galgje — Eigen Woord</h1>
+        <p>Speler 1 verzint een woord of zin, Speler 2 raadt 'm letter voor letter.</p>
+      </div>
+    </section>
+
+    <section class="container" id="hangmanCustomApp">
+      <a href="../games-hub.html" class="btn btn-outline ttt-back">&larr; Terug naar Games</a>
+
+      <!-- ============ SCREEN 1: setup (Player 1 only should look) ============ -->
+      <div id="hcSetup">
+        <p class="hc-setup-notice">🙈 Speler 2, kijk even weg! Speler 1 typt hieronder het woord of de zin.</p>
+
+        <div class="wordle-settings">
+          <span class="wordle-settings-label">Max. aantal fouten:</span>
+          <div class="hc-stepper">
+            <input type="range" id="hcMaxMistakes" min="3" max="10" value="6" aria-label="Maximaal aantal fouten">
+            <span id="hcMaxMistakesDisplay" class="hc-stepper-value">6</span>
+          </div>
+        </div>
+
+        <label for="hcWordInput" class="sr-only">Woord of zin</label>
+        <input type="password" id="hcWordInput" class="hc-word-input" placeholder="Typ hier het woord of de zin…" autocomplete="off" maxlength="40">
+
+        <p id="hcWordError" class="tournament-error" role="alert"></p>
+
+        <button id="hcStartBtn" class="btn btn-primary btn-lg mt-1" type="button">Start het raden</button>
+      </div>
+
+      <!-- ============ SCREEN 2: guessing (Player 2) ============ -->
+      <div id="hcPlay" class="hidden">
+        <p id="hcStatus" class="ttt-status" aria-live="polite"></p>
+
+        <svg id="hcDrawing" class="hangman-drawing" viewBox="0 0 200 240" role="img" aria-label="Galgje tekening"></svg>
+
+        <p id="hcWrongLetters" class="hangman-wrong-letters" aria-live="polite"></p>
+
+        <!-- Filled with one box (or a plain gap for spaces) per character by hangman-custom.js -->
+        <div id="hcWord" class="hangman-word" aria-live="polite"></div>
+
+        <!-- Filled with an A-Z layout by hangman-custom.js -->
+        <div id="hcKeyboard" class="hangman-keyboard" aria-label="Letters">""</div>
+
+        <div class="ttt-actions">
+          <button id="hcNewWord" class="btn btn-primary" type="button">Nieuw woord</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- <div data-include="chrome-end"></div> Commented out so it does not hinder buttons -->
+
+  <script type="module" src="../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!--
+  ONZE REIZEN — COUNTRY VIEW PAGE
+  Zoomed-in view for one country (?iso=XX in the URL), reached by
+  double-clicking a pin on reizen.html. Shows a pin per city that
+  appears in captions.json's optional country/place caption fields
+  (see cloudflare/cloudflare-worker-photos/worker.js's new /travel
+  endpoint), and a small photo strip for whichever city pin is
+  currently selected — the real thumbnails only load if you're
+  logged in via photos.html (same session, see reizen-land.js).
+  Logic lives in assets/js/modules/reizen-land.js.
+
+  Lives in the reizen/ subfolder, same relative-path rules as
+  games/tictactoe.html (see that file's comment for details) — the
+  shared header/footer partials and nav links resolve correctly
+  from here via assets/js/modules/layout.js + utils.js's
+  siteRootUrl helper.
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Zoom in op de steden die we in dit land bezocht hebben.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>Land — Onze Reizen</title>
+
+  <link rel="icon" href="../assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/pages/reizen.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om de kaart te tonen.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1 id="reizenLandHeading">🌍 Land</h1>
+        <p>Klik een stad om de foto's te bekijken.</p>
+      </div>
+    </section>
+
+    <section class="container" id="reizenLandApp">
+      <a href="../reizen.html" class="btn btn-outline rz-back">&larr; Terug naar de wereldkaart</a>
+
+      <p id="reizenLandStatus" class="rz-status" aria-live="polite">Steden laden…</p>
+      <p id="reizenLandSub" class="rz-hint"></p>
+
+      <div id="reizenLandMapFrame" class="rz-map-frame">
+        <img src="../assets/icons/reizen/world-map.svg" alt="" class="rz-map-bg" aria-hidden="true" style="opacity:0.08;">
+        <!-- City pins injected directly into this frame by assets/js/modules/reizen-land.js -->
+      </div>
+
+      <div class="rz-legend">
+        <span class="rz-legend-item"><span class="rz-legend-dot rz-legend-dot-city-visited" aria-hidden="true"></span> Bezochte stad</span>
+      </div>
+
+      <div id="reizenCityPanel" class="rz-city-panel hidden">
+        <h3 id="reizenCityPanelTitle">Alle reizen</h3>
+        <div id="reizenCityPhotos"></div>
+        <p id="reizenLockedNote" class="rz-locked-note hidden"></p>
+      </div>
+    </section>
+  </main>
+
+  <div data-include="chrome-end"></div>
+
+  <script type="module" src="../assets/js/main.js"></script>
+</body>
+</html>

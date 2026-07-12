@@ -42,13 +42,17 @@ import { initTicketmaster } from './modules/ticketmaster.js';
 import { initPhotoGallery } from './modules/photo-gallery.js';
 import { initBoodschappenlijst } from './modules/boodschappenlijst.js';
 import { initGifts } from './modules/gifts.js';
+import { initReizen } from './modules/reizen.js';
+import { initReizenLand } from './modules/reizen-land.js';
 import { initGamesHub } from './modules/games-hub.js';
 import { initTicTacToe } from './modules/tictactoe.js';
 import { initConnect4 } from './modules/connect4.js';
 import { initWordle } from './modules/wordle.js';
 import { initHangman } from './modules/hangman.js';
+import { initHangmanCustom } from './modules/hangman-custom.js';
 import { initBlackjack } from './modules/blackjack.js';
 import { initSpiderette } from './modules/spiderette.js';
+import { initWallz } from './modules/wallz.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Load the shared header/back-to-top partials FIRST — every module
@@ -80,13 +84,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   initPhotoGallery(); // photos.html
   initBoodschappenlijst(); // boodschappenlijst.html
   initGifts();          // gifts.html
+  initReizen();          // reizen.html
+  initReizenLand();      // reizen/land.html
   initGamesHub();      // games-hub.html
   initTicTacToe();     // tictactoe.html
   initConnect4();      // connect4.html
   initWordle();        // wordle.html
   initHangman();       // hangman.html
+  initHangmanCustom(); // games/hangman-custom.html
   initBlackjack();     // games/blackjack.html
   initSpiderette();    // games/spiderette.html
+  initWallz();         // games/wallz.html
 
   console.log(`${document.title} — initialized ✅`);
 });

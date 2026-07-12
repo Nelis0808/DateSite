@@ -1,0 +1,268 @@
+/* =============================================================
+   PAGE: ONZE REIZEN (reizen.html + reizen/land.html)
+   -------------------------------------------------------------
+   World map: a stylized SVG continent backdrop
+   (assets/icons/reizen/world-map.svg) with clickable pins placed
+   by percentage position (assets/data/travel-countries.json).
+   Double-click (or the "Bekijk land" button that appears on
+   select) navigates to reizen/land.html?iso=XX, which re-uses
+   almost all the same classes for its city-pin overview.
+   ============================================================= */
+
+/* == SHARED WRAPPER == */
+#reizenApp,
+#reizenLandApp {
+  width: min(95%, 1100px);
+  margin-inline: auto;
+  padding-bottom: var(--space-8);
+}
+
+.rz-back {
+  display: inline-flex;
+  margin-bottom: var(--space-5);
+}
+
+.rz-hint {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--space-5);
+}
+
+/* == MAP CANVAS ==
+   Fixed aspect-ratio box (matches the SVG's 1000x500 viewBox) so
+   percentage-positioned pins always land in the right spot,
+   however wide the container renders. */
+.rz-map-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1000 / 500;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: radial-gradient(circle at 30% 20%, var(--color-tertiary) 0%, transparent 60%),
+    radial-gradient(circle at 80% 80%, var(--color-secondary) 0%, transparent 55%),
+    var(--color-surface);
+  box-shadow: var(--shadow);
+}
+
+.rz-map-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--color-primary);
+  opacity: 0.22;
+}
+
+:root[data-theme='dark'] .rz-map-bg {
+  opacity: 0.3;
+}
+
+/* == PINS ==
+   Positioned absolutely via inline style (left/top %, set in JS
+   from the data file). Both the world map's country pins and the
+   country view's city pins share this exact class set, so the two
+   pages feel like one continuous zoom. */
+.rz-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .25));
+  transition: transform var(--transition-fast);
+}
+
+.rz-pin:hover, .rz-pin:focus-visible {
+  transform: translate(-50%, -100%) scale(1.15);
+  z-index: 5;
+}
+
+.rz-pin-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--color-primary);
+  border: 2px solid var(--color-white);
+}
+
+.rz-pin-visited .rz-pin-dot {
+  background: var(--color-accent);
+}
+
+.rz-pin-wishlist .rz-pin-dot {
+  background: var(--gray-500);
+  opacity: 0.85;
+}
+
+.rz-pin-label {
+  margin-top: var(--space-1);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text);
+  background: var(--color-surface);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+
+.rz-pin:hover .rz-pin-label,
+.rz-pin:focus-visible .rz-pin-label,
+.rz-pin-selected .rz-pin-label {
+  opacity: 1;
+}
+
+.rz-pin-selected .rz-pin-dot {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* == LEGEND == */
+.rz-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-5);
+  margin-top: var(--space-5);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.rz-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rz-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rz-legend-dot-visited { background: var(--color-accent); }
+.rz-legend-dot-wishlist { background: var(--gray-500); }
+.rz-legend-dot-city { background: var(--color-primary); }
+.rz-legend-dot-city-visited { background: var(--color-success); }
+
+/* == SELECTED-COUNTRY CARD (world map page) ==
+   Appears under the map once a pin is picked (single click),
+   showing the name + a "Bekijk land" button. Double-clicking a pin
+   (or tapping this button) is what actually navigates. */
+.rz-selected-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.rz-selected-card h3 {
+  margin-bottom: var(--space-1);
+}
+
+.rz-selected-card p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+/* == COUNTRY VIEW HEADER == */
+.rz-land-heading {
+  text-align: center;
+  margin-bottom: var(--space-2);
+}
+
+.rz-land-sub {
+  text-align: center;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-6);
+}
+
+/* == CITY PHOTO STRIP (country view, below the map) ==
+   Small thumbnail row for whichever city pin is currently selected. */
+.rz-city-panel {
+  margin-top: var(--space-6);
+}
+
+.rz-city-panel-empty {
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.rz-city-photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.rz-city-photo {
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  background: var(--color-surface);
+}
+
+.rz-city-photo img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+}
+
+.rz-city-photo figcaption {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+/* Locked note when the visitor isn't logged in to the photo gallery —
+   city pins/names still show (from captions.json's public shape),
+   but actual thumbnails require the same login as photos.html. */
+.rz-locked-note {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  margin-top: var(--space-3);
+}
+
+.rz-locked-note a {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* == EMPTY / LOADING STATES == */
+.rz-status {
+  text-align: center;
+  color: var(--color-text-muted);
+  min-height: 1.5em;
+  margin-bottom: var(--space-4);
+}
+
+@media (max-width: 600px) {
+  .rz-selected-card {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .rz-pin-label {
+    font-size: 0.6rem;
+  }
+}
