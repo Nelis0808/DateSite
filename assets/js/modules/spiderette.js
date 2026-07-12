@@ -3,24 +3,37 @@
 // -----------------------------------------------------------------
 // Single-deck (52 cards, no jokers) patience game, 7 tableau
 // columns. This is specifically the RELAXED-PLACEMENT variant:
-//   - You may place ANY card on ANY other card that is exactly one
+//   - You may DROP any card on any other card that is exactly one
 //     rank higher, regardless of suit or colour (so a red 7 can sit
 //     on a black 8, unlike "real" Spider which requires matching
 //     colour/suit to place at all).
-//   - That relaxed placement does NOT count for clearing a pile: a
+//   - Picking a run UP to move it is stricter, though: every card
+//     sitting on top of the one you click has to be the SAME COLOUR
+//     as it, otherwise you'd be dragging a mismatched-colour card
+//     along for the ride. E.g. on [Red King] [Black Queen, Black
+//     Jack, Red 10] you can't move the whole [Black Queen, Black
+//     Jack, Red 10] stack onto the Red King — the Red 10 on top
+//     breaks the colour run. Play the Red 10 off first, then
+//     [Black Queen, Black Jack] can move as one. Clicking the
+//     topmost card of a pile is always fine, since nothing sits on
+//     top of it to break the run.
+//   - That relaxed DROPPING does NOT count for clearing a pile: a
 //     run only gets swept away as "completed" once it is a full,
 //     unbroken King-to-Ace run of the SAME COLOUR (red or black —
 //     so e.g. hearts and diamonds can mix in one clearing run, same
 //     for clubs and spades). Mixed-colour runs can be freely built
-//     and rearranged, but they just sit there — they never auto-clear.
+//     (card by card) and rearranged, but they just sit there — they
+//     never auto-clear.
 //
 // DEAL: triangular deal across the 7 columns — column 1 gets 1 card,
 // column 2 gets 2, ... column 7 gets 7 (1+2+3+4+5+6+7 = 28 cards
 // dealt, top card of each pile face up). The remaining 24 cards form
 // the stock, dealt out in 4 "waves" of 7, 7, 7, then 3 cards (the
 // last wave only reaches the first 3 columns, since there are only
-// 3 cards left) — every column must be non-empty before a wave can
-// be dealt, same rule as classic Spider(ette).
+// 3 cards left). Dealing a wave is always allowed, even if one or
+// more columns are currently empty — an empty column simply
+// receives the dealt card as its first (face-up) card, same as any
+// other column.
 //
 // STOCK REMOVAL: as soon as the FIRST same-colour King-to-Ace run
 // clears (regardless of how many stock cards/waves are left), the
@@ -403,13 +416,23 @@ export function initSpiderette() {
   // -----------------------------------------------------------------
   // SEQUENCE HELPERS
   // -----------------------------------------------------------------
-  /** True if columns[col][index..end] is a face-up, strictly-descending-rank run (any suit/colour — see file header). */
+  /** True if columns[col][index..end] is a face-up, strictly-descending-rank run of the SAME COLOUR.
+   *  Placement itself stays relaxed (any card can be DROPPED on any card one rank higher,
+   *  regardless of colour — see canDrop), but picking a run UP to move it is stricter: every
+   *  card above the one you click must share its colour, otherwise you'd be dragging a
+   *  mismatched-colour card along for the ride. E.g. [Black Q, Black J, Red 10] — clicking
+   *  the Black J only grabs [Black J] (the Red 10 on top breaks the colour run), not [Black J,
+   *  Red 10]; the Red 10 has to be moved off first. Clicking the Red 10 itself is always fine,
+   *  since it's the topmost card. */
   function isMovableRun(col, index) {
     const pile = columns[col];
     if (index < 0 || index >= pile.length) return false;
+    if (!pile[index].faceUp) return false;
+    const baseColour = cardColour(pile[index].suit);
     for (let i = index; i < pile.length; i++) {
       if (!pile[i].faceUp) return false;
       if (i > index && rankIndex(pile[i - 1].rank) !== rankIndex(pile[i].rank) + 1) return false;
+      if (cardColour(pile[i].suit) !== baseColour) return false;
     }
     return true;
   }
@@ -621,10 +644,8 @@ export function initSpiderette() {
 
   function dealFromStock() {
     if (gameOver || stockRemoved || stock.length === 0) return;
-    if (columns.some((pile) => pile.length === 0)) {
-      setStatus('Vul eerst elke lege stapel voordat je nieuwe kaarten deelt.');
-      return;
-    }
+    // Empty columns are allowed — a dealt card just becomes that
+    // column's first card, same as classic Spider(ette).
     pushHistory();
     const waveSize = STOCK_WAVE_SIZES[stockWaveIndex] ?? stock.length;
     const dealCount = Math.min(stock.length, waveSize, COLUMN_COUNT);
