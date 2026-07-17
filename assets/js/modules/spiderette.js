@@ -687,12 +687,6 @@ export function initSpiderette() {
     return cardColour(destTop.suit) === cardColour(movingCard.suit);
   }
 
-  function allCardsFaceUp() {
-    return columns.every((pile) =>
-      pile.every((card) => card.faceUp)
-    );
-  }
-
   /** After any tableau change: sweep away a pile's top run if — and only if — it's a full, same-COLOUR King-to-Ace sequence. Mixed-colour runs (the relaxed-placement kind) are left exactly where they are. */
   function sweepCompletedSequences() {
     let sweptAny = false;
@@ -719,7 +713,7 @@ export function initSpiderette() {
       }
       renderCompleted();
       renderStock();
-      if (completedColours.length >= TOTAL_SEQUENCES allCardsFaceUp()) {
+      if (completedColours.length >= TOTAL_SEQUENCES) {
         setStatus('Alle vier de reeksen compleet — gewonnen! 🎉');
         triggerWin();
       } else {
