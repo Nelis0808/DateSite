@@ -13,16 +13,11 @@
 // pixel-percentage guessing, ever.
 //
 // INTERACTION: tap/click a pin (drags don't count — see
-// map-pan-zoom.js) opens a modal that renders that country's own
-// high-detail outline (assets/data/countries/<ISO>.json) and shows
-// its cities as pins on top of it — same idea as reizen/land.html's
-// full-page version but without leaving the world map. Because this
-// is all local static data, opening a country is instant: no
-// network round-trip, nothing that can be blocked or rate-limited.
+// map-pan-zoom.js) navigates straight to that country's own full
+// page (reizen/land.html?iso=XX) — no intermediate modal/preview.
 //
-// PRIVATE PAGE: the ENTIRE "Onze Reizen" page (this map, every pin,
-// the city names, and of course the real photo thumbnails) is
-// hidden behind the shared "👤 Profiel" login — see
+// PRIVATE PAGE: the ENTIRE "Onze Reizen" page (this map and every
+// pin) is hidden behind the shared "👤 Profiel" login — see
 // assets/js/modules/page-gate.js (wired up in main.js) and
 // assets/js/modules/auth.js. This module (reizen.js) itself doesn't
 // need to know or check that: page-gate.js hides the whole
@@ -30,11 +25,9 @@
 // is ever visible to a logged-out visitor.
 // =================================================================
 
-import { siteConfig } from '../config.js';
 import { qs, escapeHtml, siteRootUrl } from './utils.js';
 import { initPanZoom } from './map-pan-zoom.js';
-import { loadWorldData, loadCountryData, makeWorldProjection, makeFitProjection, geometryToPathD } from './geo-render.js';
-import { loadCities, positionCities, renderCityPins, loadCityPhotos } from './reizen-cities.js';
+import { loadWorldData, makeWorldProjection, geometryToPathD } from './geo-render.js';
 import { attachCoordHover } from './map-coord-hover.js';
 
 const DATA_URL = new URL('../../data/travel-countries.json', import.meta.url);
@@ -48,26 +41,12 @@ export function initReizen() {
   const mapFrame = qs('#reizenMapFrame', root);
   const statusEl = qs('#reizenStatus', root);
 
-  const modal = qs('#reizenCountryModal');
-  const modalClose = qs('#reizenCountryModalClose', modal);
-  const modalTitle = qs('#reizenCountryModalTitle', modal);
-  const modalMeta = qs('#reizenCountryModalMeta', modal);
-  const modalStatus = qs('#reizenCountryModalStatus', modal);
-  const modalViewport = qs('#reizenCountryModalViewport', modal);
-  const modalFrame = qs('#reizenCountryModalFrame', modal);
-  const modalFull = qs('#reizenCountryModalFull', modal);
-  const modalCityPanel = qs('#reizenModalCityPanel', modal);
-  const modalCityPanelTitle = qs('#reizenModalCityPanelTitle', modal);
-  const modalCityPhotos = qs('#reizenModalCityPhotos', modal);
-  const modalLockedNote = qs('#reizenModalLockedNote', modal);
-
-  const photosWorkerUrl = siteConfig.photos?.workerUrl || '';
-
   let countries = [];
-  let openRequestId = 0; // guards against a slow load resolving after the modal was closed/reopened
-  let activeCountry = null; // whichever country the modal is currently showing — read by modalPanZoom's onTap
   let worldProjection = null;
-  let modalProjection = null;
+
+  function goToCountry(country) {
+    window.location.href = siteRootUrl(`reizen/land.html?iso=${encodeURIComponent(country.iso)}`);
+  }
 
   const worldZoom = initPanZoom(viewport, mapFrame, {
     onTap: (event) => {
@@ -75,40 +54,13 @@ export function initReizen() {
       if (!pin) return;
       const iso = pin.dataset.iso;
       const country = countries.find((c) => c.iso === iso);
-      if (country) openCountryModal(country, pin);
+      if (country) goToCountry(country);
     },
   });
   qs('#reizenZoomIn', root)?.addEventListener('click', () => worldZoom.zoomIn());
   qs('#reizenZoomOut', root)?.addEventListener('click', () => worldZoom.zoomOut());
   qs('#reizenZoomReset', root)?.addEventListener('click', () => worldZoom.reset());
   attachCoordHover(viewport, worldZoom, () => worldProjection);
-
-  const modalPanZoom = initPanZoom(modalViewport, modalFrame, {
-    onTap: (event) => {
-      const cityPin = event.target.closest?.('.rz-pin[data-city]');
-      if (!cityPin) return;
-      const city = activeCountry?.__cities?.find((c) => c.name === cityPin.dataset.city);
-      if (city) selectModalCity(city);
-    },
-  });
-  attachCoordHover(modalViewport, modalPanZoom, () => modalProjection);
-
-  function closeModal() {
-    modal.classList.add('hidden');
-    document.body.classList.remove('rz-modal-locked');
-    activeCountry = null;
-    modalProjection = null;
-    modalFrame.innerHTML = '';
-    modalCityPanel.classList.add('hidden');
-  }
-
-  modalClose.addEventListener('click', closeModal);
-  modal.addEventListener('click', (event) => {
-    if (event.target === modal) closeModal();
-  });
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
-  });
 
   // ---- World map render + pins ------------------------------------------
 
@@ -147,7 +99,7 @@ export function initReizen() {
     pin.className = `rz-pin rz-pin-${country.status === 'visited' ? 'visited' : 'wishlist'}`;
     pin.style.left = `${country.__x}%`;
     pin.style.top = `${country.__y}%`;
-    pin.setAttribute('aria-label', `${country.name} — klik om de landkaart te bekijken`);
+    pin.setAttribute('aria-label', `${country.name} — klik om naar de landkaart te gaan`);
 
     pin.innerHTML = `
       <span class="rz-pin-scaler">
@@ -159,102 +111,11 @@ export function initReizen() {
     pin.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        openCountryModal(country, pin);
+        goToCountry(country);
       }
     });
 
     mapFrame.appendChild(pin);
-  }
-
-  // ---- Country modal ---------------------------------------------------
-
-  async function selectModalCity(city) {
-    qs('.rz-pin-selected', modalFrame)?.classList.remove('rz-pin-selected');
-    modalFrame.querySelector(`.rz-pin[data-city="${CSS.escape(city.name)}"]`)?.classList.add('rz-pin-selected');
-
-    modalCityPanel.classList.remove('hidden');
-    modalCityPanelTitle.textContent = `📍 ${city.name}`;
-
-    await loadCityPhotos({
-      workerUrl: photosWorkerUrl,
-      city,
-      countryLower: city.__countryLower,
-      iso: city.__iso,
-      targetEl: modalCityPhotos,
-      lockedNoteEl: modalLockedNote,
-    });
-  }
-
-  async function openCountryModal(country, pinEl) {
-    qs('.rz-pin-selected', mapFrame)?.classList.remove('rz-pin-selected');
-    pinEl.classList.add('rz-pin-selected');
-
-    const requestId = ++openRequestId;
-    activeCountry = country;
-
-    modal.classList.remove('hidden');
-    document.body.classList.add('rz-modal-locked');
-    modalTitle.textContent = country.name;
-    modalMeta.textContent = country.status === 'visited' ? 'Hier zijn we al geweest ✅' : 'Nog op het verlanglijstje ✨';
-    modalStatus.textContent = 'Landkaart laden…';
-    modalFrame.innerHTML = '';
-    modalCityPanel.classList.add('hidden');
-    modalFull.href = siteRootUrl(`reizen/land.html?iso=${encodeURIComponent(country.iso)}`);
-    modalProjection = null;
-    modalViewport.style.aspectRatio = '4 / 3';
-    modalPanZoom.reset();
-
-    let feature;
-    try {
-      feature = await loadCountryData(country.iso);
-    } catch (error) {
-      console.error(`Kon geo-data voor "${country.iso}" niet laden:`, error);
-    }
-
-    if (requestId !== openRequestId) return; // modal was closed/reopened while we waited
-
-    if (!feature) {
-      modalStatus.textContent = `❌ Kon de kaart van ${country.name} niet laden (assets/data/countries/${country.iso}.json ontbreekt of is corrupt).`;
-      return;
-    }
-
-    const projection = makeFitProjection(feature.geometry, { targetWidth: 1000 });
-    modalProjection = projection;
-    modalViewport.style.aspectRatio = projection.aspectRatio;
-    modalFrame.insertAdjacentHTML('afterbegin', `<svg viewBox="${projection.viewBox}" class="rz-country-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kaart van ${escapeHtml(country.name)}"><path d="${geometryToPathD(feature.geometry, projection.project)}" class="rz-country-shape"></path></svg>`);
-
-    if (!photosWorkerUrl || photosWorkerUrl.includes('YOUR-SUBDOMAIN')) {
-      modalStatus.textContent = '⚠️ Nog geen photo-gallery Worker gekoppeld, dus geen steden. Zie STAPPENPLAN-REIZEN.md.';
-      return;
-    }
-
-    modalStatus.textContent = 'Steden laden…';
-    try {
-      const cities = await loadCities(photosWorkerUrl, country.name);
-      if (requestId !== openRequestId) return;
-
-      if (cities.length === 0) {
-        modalStatus.textContent = 'Nog geen steden gecatalogiseerd voor dit land.';
-        return;
-      }
-
-      const positioned = positionCities(cities, country.cityPins || {}, projection.project, projection).map((c) => ({
-        ...c,
-        __countryLower: country.name.toLowerCase(),
-        __iso: country.iso,
-      }));
-      country.__cities = positioned;
-
-      const preciseCount = positioned.filter((c) => c.precise).length;
-      modalStatus.textContent = preciseCount > 0
-        ? `${positioned.length} plek${positioned.length === 1 ? '' : 'ken'} — klik op een pin voor de foto's.`
-        : `${positioned.length} plek${positioned.length === 1 ? '' : 'ken'} (bij benadering geplaatst) — klik op een pin voor de foto's.`;
-
-      renderCityPins(modalFrame, positioned, (city) => selectModalCity(city));
-    } catch (error) {
-      console.error('Kon steden niet laden:', error);
-      modalStatus.textContent = '❌ Kon steden niet laden van de Worker.';
-    }
   }
 
   // ---- Boot --------------------------------------------------------
@@ -273,7 +134,7 @@ export function initReizen() {
         statusEl.textContent = 'Nog geen landen toegevoegd aan assets/data/travel-countries.json.';
         return;
       }
-      statusEl.textContent = `${countries.length} landen op de kaart — sleep om te verschuiven, scroll/knijp om te zoomen, klik een pin voor de landkaart.`;
+      statusEl.textContent = `${countries.length} landen op de kaart — sleep om te verschuiven, scroll/knijp om te zoomen, klik een pin om naar dat land te gaan.`;
       renderWorldMap(worldData.features);
     })
     .catch((error) => {

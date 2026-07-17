@@ -1,9 +1,8 @@
 // =================================================================
 // ONZE REIZEN — shared city-pin helpers
 // -----------------------------------------------------------------
-// Used by BOTH the quick country modal on the world map (reizen.js)
-// and the full country page (reizen/land.html via reizen-land.js),
-// so the two never drift apart. Three jobs:
+// Used by the full country page (reizen/land.html via
+// reizen-land.js). Three jobs:
 //
 //   1. loadCities()      — ask the photo-gallery Worker's public
 //                           /travel endpoint which cities exist for
@@ -26,10 +25,64 @@
 //                           as photos.html (see assets/js/modules/
 //                           auth.js — one login in the sticky
 //                           header, not a separate one per page).
+//                           Each thumbnail is a button — click it to
+//                           open the #reizenPhotoLightbox (markup in
+//                           reizen/land.html) full-size with its
+//                           longer caption, same pattern as
+//                           photo-gallery.js's #pgLightbox.
 // =================================================================
 
 import { escapeHtml } from './utils.js';
 import { getAuth } from './auth.js';
+
+// ---- Photo lightbox (click a thumbnail to see it full-size with its
+// longer caption) — lazily wired up on first use, since the markup
+// (#reizenPhotoLightbox) only exists on reizen/land.html. ----------
+let lightboxEls = null;
+let lastFocusedTrigger = null;
+
+function getLightboxEls() {
+  if (lightboxEls) return lightboxEls;
+  const lightbox = document.getElementById('reizenPhotoLightbox');
+  if (!lightbox) return null; // not on this page
+
+  lightboxEls = {
+    lightbox,
+    image: document.getElementById('reizenPhotoLightboxImage'),
+    caption: document.getElementById('reizenPhotoLightboxCaption'),
+    close: document.getElementById('reizenPhotoLightboxClose'),
+  };
+
+  lightboxEls.close.addEventListener('click', closePhotoLightbox);
+  lightbox.addEventListener('click', (event) => {
+    if (event.target === lightbox) closePhotoLightbox();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !lightbox.classList.contains('hidden')) closePhotoLightbox();
+  });
+
+  return lightboxEls;
+}
+
+function openPhotoLightbox(imageUrl, caption) {
+  const els = getLightboxEls();
+  if (!els) return;
+  lastFocusedTrigger = document.activeElement;
+  els.image.src = imageUrl;
+  els.image.alt = caption || '';
+  els.caption.textContent = caption || '';
+  els.lightbox.classList.remove('hidden');
+  document.body.classList.add('rz-photo-lightbox-locked'); // prevents background scroll
+  els.close.focus();
+}
+
+function closePhotoLightbox() {
+  if (!lightboxEls) return;
+  lightboxEls.lightbox.classList.add('hidden');
+  document.body.classList.remove('rz-photo-lightbox-locked');
+  lightboxEls.image.src = '';
+  if (lastFocusedTrigger) lastFocusedTrigger.focus();
+}
 
 export async function loadCities(workerUrl, countryQuery) {
   const response = await fetch(`${workerUrl}/travel?country=${encodeURIComponent(countryQuery)}`);
@@ -142,22 +195,64 @@ export async function loadCityPhotos({ workerUrl, city, countryLower, iso, targe
       return;
     }
 
-    const cards = await Promise.all(matches.map(async (photo) => {
-      const imgResponse = await fetch(`${workerUrl}/photos/object?key=${encodeURIComponent(photo.key)}`, {
-        headers: { Authorization: `Bearer ${auth.token}` },
-      });
-      if (!imgResponse.ok) return '';
-      const blob = await imgResponse.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      return `
-        <figure class="rz-city-photo">
-          <img src="${objectUrl}" alt="${escapeHtml(photo.caption || city.name)}">
-          ${photo.caption ? `<figcaption>${escapeHtml(photo.caption)}</figcaption>` : ''}
-        </figure>
-      `;
-    }));
+    targetEl.innerHTML = '<div class="rz-city-photos"></div>';
+    const grid = targetEl.querySelector('.rz-city-photos');
 
-    targetEl.innerHTML = `<div class="rz-city-photos">${cards.join('')}</div>`;
+    // Build skeleton cards first, in the right order (DOM refs kept
+    // directly, no re-querying by key needed), then fill each one in
+    // as its bytes arrive, in parallel — same pattern as
+    // photo-gallery.js's loadPhotos().
+    const cardRefs = matches.map((photo) => {
+      // Long caption (shown in the lightbox) falls back to the short
+      // one if captions.json didn't provide a longer variant.
+      const longCaption = photo.captionLong || photo.caption;
+
+      const figure = document.createElement('figure');
+      figure.className = 'rz-city-photo';
+
+      const trigger = document.createElement('button');
+      trigger.type = 'button';
+      trigger.className = 'rz-city-photo-trigger';
+      trigger.disabled = true;
+      trigger.setAttribute('aria-label', photo.caption ? `Vergroot: ${photo.caption}` : 'Foto vergroten');
+
+      const image = document.createElement('span');
+      image.className = 'rz-city-photo-image rz-city-photo-loading';
+      image.setAttribute('aria-hidden', 'true');
+      trigger.appendChild(image);
+      trigger.addEventListener('click', () => {
+        if (trigger.dataset.imageUrl) openPhotoLightbox(trigger.dataset.imageUrl, longCaption || city.name);
+      });
+      figure.appendChild(trigger);
+
+      if (photo.caption) {
+        const caption = document.createElement('figcaption');
+        caption.textContent = photo.caption;
+        figure.appendChild(caption);
+      }
+
+      grid.appendChild(figure);
+      return { photo, image, trigger };
+    });
+
+    await Promise.all(cardRefs.map(async ({ photo, image, trigger }) => {
+      try {
+        const imgResponse = await fetch(`${workerUrl}/photos/object?key=${encodeURIComponent(photo.key)}`, {
+          headers: { Authorization: `Bearer ${auth.token}` },
+        });
+        if (!imgResponse.ok) throw new Error(`HTTP ${imgResponse.status}`);
+        const blob = await imgResponse.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        image.style.backgroundImage = `url('${objectUrl}')`;
+        image.classList.remove('rz-city-photo-loading');
+        trigger.dataset.imageUrl = objectUrl;
+        trigger.disabled = false;
+      } catch (error) {
+        console.error(`Kon foto "${photo.key}" niet laden:`, error);
+        image.classList.remove('rz-city-photo-loading');
+        image.classList.add('rz-city-photo-error');
+      }
+    }));
   } catch (error) {
     console.error('Kon foto\u2019s voor deze stad niet laden:', error);
     targetEl.innerHTML = `<p class="rz-city-panel-empty">❌ Kon foto's niet laden.</p>`;

@@ -1,9 +1,9 @@
 // =================================================================
 // MAP PAN/ZOOM — generic drag-to-pan + wheel/pinch-to-zoom
 // -----------------------------------------------------------------
-// Shared by reizen.js (world map) and reizen-land.js + the country
-// modal in reizen.js (country-specific vector maps). Works on any
-// `viewport` (fixed-size, overflow:hidden box) containing a `frame`
+// Shared by reizen.js (world map) and reizen-land.js (a country's
+// own vector map). Works on any `viewport` (fixed-size,
+// overflow:hidden box) containing a `frame`
 // (the element that actually gets translated/scaled — background
 // image + pins live inside it as normal percentage-positioned
 // children, so their positions never need recalculating here).
@@ -18,12 +18,22 @@
 // Sets a `--rz-inv-zoom` custom property on `frame` (1 / scale) so
 // CSS can counter-scale pins/labels — see .rz-pin in reizen.css —
 // keeping them a constant on-screen size no matter how far zoomed.
+//
+// GPU LAYER TOGGLE: `frame` only gets `will-change: transform` (via
+// the `.rz-map-frame-active` class) while a gesture is actually in
+// progress, removed again a moment after it settles. Leaving
+// will-change on permanently pins the frame to a fixed-resolution
+// composited layer at all times, which is what made pin labels and
+// borders look blurry once you'd zoomed in and stopped — toggling it
+// lets the browser re-rasterize crisply at rest, while still getting
+// the perf benefit during the gesture itself.
 // =================================================================
 
 const MIN_SCALE = 1;
 const MAX_SCALE = 6;
 const TAP_MOVE_THRESHOLD = 8; // px — press+release within this = a tap, not a drag
 const DOUBLE_TAP_ZOOM = 2.5;
+const IDLE_LAYER_DELAY = 220; // ms after the last transform change before dropping will-change
 
 export function initPanZoom(viewport, frame, { onTap, minScale = MIN_SCALE, maxScale = MAX_SCALE } = {}) {
   let scale = 1;
@@ -36,12 +46,17 @@ export function initPanZoom(viewport, frame, { onTap, minScale = MIN_SCALE, maxS
   let moved = 0;              // cumulative movement of the primary pointer this gesture
   let lastTapTime = 0;
   let lastTapPos = null;
+  let idleLayerTimer = null;
 
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
   }
 
   function apply() {
+    frame.classList.add('rz-map-frame-active');
+    clearTimeout(idleLayerTimer);
+    idleLayerTimer = setTimeout(() => frame.classList.remove('rz-map-frame-active'), IDLE_LAYER_DELAY);
+
     frame.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
     frame.style.setProperty('--rz-inv-zoom', String(1 / scale));
     viewport.classList.toggle('rz-map-viewport-zoomed', scale > minScale + 0.001);
@@ -213,6 +228,9 @@ export function initPanZoom(viewport, frame, { onTap, minScale = MIN_SCALE, maxS
       const rect = viewport.getBoundingClientRect();
       return [(clientX - rect.left - tx) / scale, (clientY - rect.top - ty) / scale];
     },
-    destroy: () => resizeObserver.disconnect(),
+    destroy: () => {
+      resizeObserver.disconnect();
+      clearTimeout(idleLayerTimer);
+    },
   };
 }

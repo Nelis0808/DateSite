@@ -2,18 +2,19 @@
 <!--
   ONZE REIZEN — COUNTRY VIEW PAGE
   Full-page view for one country (?iso=XX in the URL, an ISO 3166-1
-  alpha-2 code), reached from the world map's country modal
-  ("Volledige pagina met foto's" button in reizen.html) or by
-  sharing/bookmarking this URL directly. Shows that country's own
-  high-detail outline (assets/data/countries/<ISO>.json, Natural
-  Earth data — see assets/js/modules/geo-render.js) as a
-  pannable/zoomable background (assets/js/modules/map-pan-zoom.js),
-  with a pin per city that appears in captions.json's optional
-  country/place caption fields (see
-  cloudflare/cloudflare-worker-photos/worker.js's /travel endpoint),
-  and a photo strip for whichever city pin is currently selected —
-  real thumbnails only load if you're logged in via photos.html
-  (same session, see reizen-land.js).
+  alpha-2 code), reached by tapping a pin on the world map
+  (reizen.html) or by sharing/bookmarking this URL directly. Shows
+  that country's own high-detail outline
+  (assets/data/countries/<ISO>.json, Natural Earth data — see
+  assets/js/modules/geo-render.js) as a pannable/zoomable background
+  (assets/js/modules/map-pan-zoom.js), with a pin per city that
+  appears in captions.json's optional country/place caption fields
+  (see cloudflare/cloudflare-worker-photos/worker.js's /travel
+  endpoint), and a photo strip for whichever city pin is currently
+  selected — real thumbnails only load if you're logged in via
+  photos.html (same session, see reizen-land.js). Click any thumbnail
+  to open it full-size with its longer caption in the lightbox at
+  the bottom of this file.
 
   Lives in the reizen/ subfolder, same relative-path rules as
   games/tictactoe.html (see that file's comment for details) — the
@@ -68,7 +69,7 @@
     </section>
 
     <div class="hidden" data-gate-content>
-      <section id="hero" class="hero">
+      <section id="hero" class="hero rz-land-hero">
         <div class="container">
           <h1 id="reizenLandHeading">🌍 Land</h1>
           <p>Sleep om te verschuiven, scroll of knijp om te zoomen. Klik een stad om de foto's te bekijken.</p>
@@ -98,7 +99,6 @@
       <div class="rz-legend">
         <span class="rz-legend-item"><span class="rz-legend-dot rz-legend-dot-city-visited" aria-hidden="true"></span> Bezochte stad</span>
         <span class="rz-legend-item"><span class="rz-legend-dot rz-legend-dot-city" aria-hidden="true"></span> Op verlanglijstje</span>
-        <span class="rz-data-credit">Kaartgegevens: Natural Earth</span>
       </div>
 
       <div id="reizenCityPanel" class="rz-city-panel hidden">
@@ -109,6 +109,18 @@
       </section>
     </div>
   </main>
+
+  <!-- CITY PHOTO LIGHTBOX — click any city photo to open it full-size
+       with its longer caption; the rest of the page dims behind it.
+       Filled/shown by loadCityPhotos() in reizen-cities.js, same
+       pattern as #pgLightbox in photos.html. -->
+  <div id="reizenPhotoLightbox" class="rz-photo-lightbox hidden" role="dialog" aria-modal="true" aria-label="Vergrote foto">
+    <button type="button" id="reizenPhotoLightboxClose" class="rz-photo-lightbox-close" aria-label="Sluiten">✕</button>
+    <figure class="rz-photo-lightbox-content">
+      <img id="reizenPhotoLightboxImage" alt="">
+      <figcaption id="reizenPhotoLightboxCaption"></figcaption>
+    </figure>
+  </div>
 
   <div data-include="chrome-end"></div>
 
