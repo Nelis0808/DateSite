@@ -100,15 +100,30 @@
   gap: var(--space-2);
 }
 
-/* Country-specific page (reizen/land.html): a single country's map
-   doesn't need to be as wide as the world overview — cap it smaller
-   still and center it, so the whole page (map + back button + city
-   list) fits on one screen without much scrolling. */
+/* Country-specific page (reizen/land.html): every country has a
+   different shape, wide/flat ones like Australia or the US, tall/
+   narrow ones like Chile or Portugal, so a single fixed width (with
+   height just following from aspect-ratio) either squashes wide
+   countries paper-thin or stretches tall ones into a huge column
+   that doesn't fit the screen. Instead this fits the box within BOTH
+   a max-width AND a max-height budget at once, using the country's
+   real aspect ratio (--rz-country-aspect, a plain width/height
+   number set inline per country by reizen-land.js's loadBackground):
+   whichever budget is more restrictive for that particular shape
+   wins, exactly like `object-fit: contain` but computed for layout
+   instead of an image/video. Works the same on a laptop or a phone
+   since both budgets are viewport-relative with a comfortable floor
+   and ceiling. */
 .rz-map-viewport-wrap--country {
-  /* 210px * 1.25 = 262.5px, then made 25% smaller again per request:
-     262.5px * 0.75 = 196.875px. */
-  max-width: 196.875px;
+  --rz-country-aspect: 2.553; /* fallback (~360/141) until JS sets the real per-country ratio */
+  --rz-map-max-w: min(90vw, 640px);
+  --rz-map-max-h: min(60vh, 520px);
+  width: min(var(--rz-map-max-w), calc(var(--rz-map-max-h) * var(--rz-country-aspect)));
   margin-inline: auto;
+}
+
+.rz-map-viewport-wrap--country .rz-map-viewport {
+  max-height: var(--rz-map-max-h);
 }
 
 .rz-map-viewport {
@@ -302,6 +317,13 @@
   background: var(--color-accent);
 }
 
+/* 'both' status: already visited somewhere in the country, but also
+   want to visit elsewhere in it (e.g. new cities). Split the dot
+   diagonally between the visited and wishlist colours. */
+.rz-pin-both .rz-pin-dot {
+  background: linear-gradient(135deg, var(--color-primary) 50%, var(--color-accent) 50%);
+}
+
 .rz-pin-city .rz-pin-dot {
   background: var(--color-secondary);
   width: 15px;
@@ -372,6 +394,7 @@
 
 .rz-legend-dot-visited { background: var(--color-primary); }
 .rz-legend-dot-wishlist { background: var(--color-accent); }
+.rz-legend-dot-both { background: linear-gradient(135deg, var(--color-primary) 50%, var(--color-accent) 50%); }
 .rz-legend-dot-city { background: var(--color-secondary); }
 .rz-legend-dot-city-visited { background: var(--color-success); }
 

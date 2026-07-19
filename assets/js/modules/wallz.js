@@ -227,7 +227,7 @@ export function initWallz() {
     keys.forEach((k) => target.delete(k));
 
     if (!p1Ok || !p2Ok) {
-      return { ok: false, reason: 'Die muur blokkeert een speler volledig — niet toegestaan.' };
+      return { ok: false, reason: 'Die muur blokkeert een speler volledig, niet toegestaan.' };
     }
     return { ok: true };
   }

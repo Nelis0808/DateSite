@@ -33,12 +33,12 @@ export function initProfileDropdown() {
       loggedInView.classList.remove('hidden');
       whoLabel.textContent = currentPersonLabel();
       if (triggerIcon) triggerIcon.textContent = '🔓';
-      trigger.setAttribute('aria-label', `Profiel — ingelogd als ${currentPersonLabel()}`);
+      trigger.setAttribute('aria-label', `Profiel, ingelogd als ${currentPersonLabel()}`);
     } else {
       loggedOutView.classList.remove('hidden');
       loggedInView.classList.add('hidden');
       if (triggerIcon) triggerIcon.textContent = '👤';
-      trigger.setAttribute('aria-label', 'Profiel — inloggen');
+      trigger.setAttribute('aria-label', 'Profiel, inloggen');
     }
   }
 

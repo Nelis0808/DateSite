@@ -233,7 +233,7 @@ export function initSnake() {
     resetBoard();
     running = true;
     startBtn.disabled = true;
-    setStatus('Blauw (WASD) vs Roze (pijltjestoetsen) — ga!');
+    setStatus('Blauw (WASD) vs Roze (pijltjestoetsen), ga!');
     tickTimer = setTimeout(tick, TICK_MS);
   }
 

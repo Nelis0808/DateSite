@@ -719,7 +719,7 @@ export function initSpiderette() {
   function updateBalanceUI() {
     if (chipLoadFailed) {
       balanceEl.textContent = '?';
-      balanceEl.title = 'Kon saldo niet laden — de weergegeven waarde klopt mogelijk niet. Zie de browserconsole voor details.';
+      balanceEl.title = 'Kon saldo niet laden, de weergegeven waarde klopt mogelijk niet. Zie de browserconsole voor details.';
       return;
     }
     balanceEl.title = '';
@@ -969,7 +969,7 @@ export function initSpiderette() {
       renderCompleted();
       renderStock();
       if (completedColours.length >= TOTAL_SEQUENCES && allCardsFaceUp()) {
-        setStatus('Alle vier de reeksen compleet — gewonnen! 🎉');
+        setStatus('Alle vier de reeksen compleet, gewonnen! 🎉');
         triggerWin();
       } else {
         setStatus(`Reeks compleet! Nog ${TOTAL_SEQUENCES - completedColours.length} te gaan.`);

@@ -58,6 +58,7 @@ export function initBoodschappenlijst() {
   function setStatus(text, isError = false) {
     statusEl.textContent = text;
     statusEl.classList.toggle('sl-status-error', isError);
+    statusEl.classList.remove('hidden');
   }
 
   function render() {
@@ -66,12 +67,22 @@ export function initBoodschappenlijst() {
     if (items.length === 0) {
       listEl.innerHTML = '';
       emptyStateEl.classList.remove('hidden');
-      setStatus('Lijstje is leeg.');
+      statusEl.classList.add('hidden');
       return;
     }
 
     emptyStateEl.classList.add('hidden');
-    setStatus(`${checkedCount} van ${items.length} afgevinkt`);
+
+    // Only show the "x van y afgevinkt" line once everything on the
+    // list has been crossed off, so it's a completion message
+    // ("klaar!") rather than a running counter, but still hide it
+    // entirely if nothing has been checked yet.
+    const allChecked = checkedCount > 0 && checkedCount === items.length;
+    if (allChecked) {
+      setStatus(`${checkedCount} van ${items.length} afgevinkt`);
+    } else {
+      statusEl.classList.add('hidden');
+    }
 
     listEl.innerHTML = items
       .map(

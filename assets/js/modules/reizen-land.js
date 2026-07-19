@@ -69,7 +69,7 @@ export function initReizenLand() {
   const iso = (params.get('iso') || '').toUpperCase();
 
   if (!iso) {
-    statusEl.textContent = 'Geen land gekozen — ga terug naar de kaart.';
+    statusEl.textContent = 'Geen land gekozen, ga terug naar de kaart.';
     return;
   }
 
@@ -123,6 +123,16 @@ export function initReizenLand() {
     const projection = makeFitProjection(feature.geometry, { targetWidth: 900 });
     currentProjection = projection;
     viewport.style.aspectRatio = projection.aspectRatio;
+    // Also expose the ratio as a plain number custom property on the
+    // wrap, so CSS can size the box to fit within both a max-width
+    // AND a max-height at once (aspect-ratio alone only constrains
+    // one axis from the other, it can't cap both independently) —
+    // see .rz-map-viewport-wrap--country in reizen.css. Every
+    // country's shape is different (wide like Australia/the US, tall
+    // like Chile/Portugal), so this has to be computed per country,
+    // not hard-coded.
+    const wrapEl = viewport.closest('.rz-map-viewport-wrap');
+    if (wrapEl) wrapEl.style.setProperty('--rz-country-aspect', String(projection.width / projection.height));
     mapFrame.insertAdjacentHTML('afterbegin', `<svg viewBox="${projection.viewBox}" class="rz-country-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kaart van ${escapeHtml(displayName)}"><path d="${geometryToPathD(feature.geometry, projection.project)}" class="rz-country-shape"></path></svg>`);
     return projection;
   }
@@ -141,7 +151,7 @@ export function initReizenLand() {
       const country = (data.countries || []).find((c) => c.iso.toUpperCase() === iso);
       const displayName = country?.name || iso;
       headingEl.textContent = `🌍 ${displayName}`;
-      document.title = `${displayName} — Onze Reizen`;
+      document.title = `${displayName}, Onze Reizen`;
 
       const projection = await loadBackground(displayName);
       loadCitiesForCountry(displayName, country?.cityPins || {}, projection);
@@ -174,7 +184,7 @@ export function initReizenLand() {
 
         const visitedCount = cities.filter((c) => c.visited).length;
         const preciseCount = cities.filter((c) => c.precise).length;
-        statusEl.textContent = `${cities.length} plek${cities.length === 1 ? '' : 'ken'} gevonden — klik op een pin voor de foto's.`;
+        statusEl.textContent = `${cities.length} plek${cities.length === 1 ? '' : 'ken'} gevonden, klik op een pin voor de foto's.`;
         subEl.textContent = preciseCount > 0
           ? `${visitedCount} van ${cities.length} al bezocht · ${preciseCount} precies geplaatst.`
           : `${visitedCount} van ${cities.length} al bezocht.`;

@@ -266,7 +266,7 @@ export function initWordle() {
       // Only reachable once the row is filled to wordLength (see the
       // length check above), so this is exactly the "full row, unknown
       // word" case — mark it with a red border, not just the shake.
-      updateStatus('Onbekend woord — probeer een ander.');
+      updateStatus('Onbekend woord, probeer een ander.');
       shakeCurrentRow();
       markRowInvalid();
       flashEnterInvalid();

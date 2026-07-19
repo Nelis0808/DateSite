@@ -322,6 +322,8 @@ export function initGifts() {
     qs('.gf-add-title', form).value = gift.title;
     qs('.gf-add-note', form).value = gift.note || '';
     qs('.gf-add-photo', form).value = '';
+    const editFilenameEl = qs('.gf-add-photo-filename', form);
+    if (editFilenameEl) editFilenameEl.textContent = editFilenameEl.dataset.defaultText || 'Kiest bestand';
     qs('button[type="submit"]', form).textContent = 'Wijzigingen opslaan';
     form.classList.add('gf-add-form-editing');
 
@@ -337,6 +339,8 @@ export function initGifts() {
     editingId = null;
     const { form } = columnConfig;
     form.reset();
+    const exitFilenameEl = qs('.gf-add-photo-filename', form);
+    if (exitFilenameEl) exitFilenameEl.textContent = exitFilenameEl.dataset.defaultText || 'Kiest bestand';
     qs('button[type="submit"]', form).textContent = 'Toevoegen';
     form.classList.remove('gf-add-form-editing');
     const cancelBtn = qs('.gf-edit-cancel', form);
@@ -351,9 +355,23 @@ export function initGifts() {
     const titleInput = qs('.gf-add-title', form);
     const noteInput = qs('.gf-add-note', form);
     const photoInput = qs('.gf-add-photo', form);
+    const photoFilenameEl = qs('.gf-add-photo-filename', form);
     const errorEl = form.nextElementSibling; // .gf-add-error, right after the form
     const submitBtn = qs('button[type="submit"]', form);
     const cancelBtn = qs('.gf-edit-cancel', form);
+
+    // Shows the chosen file's name next to the custom "Kiest bestand"
+    // button (replaces the browser's native, hidden filename text —
+    // see .gf-add-photo-filename in gifts.css).
+    function resetPhotoFilename() {
+      if (photoFilenameEl) photoFilenameEl.textContent = photoFilenameEl.dataset.defaultText || 'Kiest bestand';
+    }
+
+    photoInput?.addEventListener('change', () => {
+      if (photoFilenameEl) {
+        photoFilenameEl.textContent = photoInput.files?.[0]?.name || photoFilenameEl.dataset.defaultText || 'Kiest bestand';
+      }
+    });
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -386,6 +404,7 @@ export function initGifts() {
       } else {
         await addGift(person, payload, { submitBtn });
         form.reset();
+        resetPhotoFilename();
         urlInput.focus();
       }
     });

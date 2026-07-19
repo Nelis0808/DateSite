@@ -94,7 +94,7 @@ export function initTicketmaster() {
   async function runQuery({ replace }) {
     if (!workerUrl || workerUrl.includes('YOUR-SUBDOMAIN')) {
       statusEl.textContent =
-        '⚠️ Geen worker geconfigureerd. Zet je Cloudflare Worker-URL in assets/js/config.js (ticketmaster.workerUrl) — zie STAPPENPLAN.md.';
+        '⚠️ Geen worker geconfigureerd. Zet je Cloudflare Worker-URL in assets/js/config.js (ticketmaster.workerUrl), zie STAPPENPLAN.md.';
       resultsEl.innerHTML = '';
       loadMoreBtn.classList.add('hidden');
       return;

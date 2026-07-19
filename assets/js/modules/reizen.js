@@ -130,10 +130,11 @@ export function initReizen() {
     const pin = document.createElement('button');
     pin.type = 'button';
     pin.dataset.iso = country.iso;
-    pin.className = `rz-pin rz-pin-${country.status === 'visited' ? 'visited' : 'wishlist'}`;
+    const statusClass = country.status === 'both' ? 'both' : country.status === 'visited' ? 'visited' : 'wishlist';
+    pin.className = `rz-pin rz-pin-${statusClass}`;
     pin.style.left = `${country.__x}%`;
     pin.style.top = `${country.__y}%`;
-    pin.setAttribute('aria-label', `${country.name} — klik om naar de landkaart te gaan`);
+    pin.setAttribute('aria-label', `${country.name}, klik om naar de landkaart te gaan`);
 
     pin.innerHTML = `
       <span class="rz-pin-scaler">

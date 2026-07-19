@@ -3,19 +3,66 @@
   "_pinComment": "'pin' is OPTIONAL, by default a country's pin sits at the geographic centroid of its mainland (computed automatically, see STAPPENPLAN-REIZEN.md's data-pipeline notes). Set 'pin' to override that with a specific {lon, lat} instead , e.g. a capital city, easy to look up on Wikipedia/Google Maps, no pixel-guessing involved. Longitude first, then latitude (same order as GeoJSON).",
   "_cityPinsComment": "'cityPins' is OPTIONAL per country , a map of city name (must match the 'Plaats' used in captions.json, case-insensitive) to its real-world {lon, lat}. Look the coordinates up once (Wikipedia's infobox, or right-click 'What's here' on Google Maps) and they'll always render in exactly the right spot on that country's map, at any zoom, no trial and error. Leave a city out and reizen-land.js falls back to an automatic fan-out layout for it instead; nothing breaks.",
   "countries": [
-    { "iso": "NL", "name": "Nederland",           "status": "visited",  "cityPins": { "amsterdam": { "lon": 4.9041, "lat": 52.3676 } } },
-    { "iso": "BE", "name": "België",              "status": "visited",  "cityPins": { "brussel": { "lon": 4.3517, "lat": 50.8503 } } },
-    { "iso": "DE", "name": "Duitsland",           "status": "visited",  "cityPins": { "berlijn": { "lon": 13.4050, "lat": 52.5200 } } },
-    { "iso": "FR", "name": "Frankrijk",           "status": "visited",  "cityPins": { "parijs": { "lon": 2.3522, "lat": 48.8566 } } },
-    { "iso": "ES", "name": "Spanje",              "status": "visited",  "cityPins": { "madrid": { "lon": -3.7038, "lat": 40.4168 }, "barcelona": { "lon": 2.1734, "lat": 41.3851 } } },
-    { "iso": "PT", "name": "Portugal",            "status": "visited",  "cityPins": { "lissabon": { "lon": -9.1393, "lat": 38.7223 } } },
-    { "iso": "IT", "name": "Italië",              "status": "visited",  "cityPins": { "rome": { "lon": 12.4964, "lat": 41.9028 } } },
-    { "iso": "GB", "name": "Verenigd Koninkrijk", "status": "visited",  "cityPins": { "londen": { "lon": -0.1276, "lat": 51.5072 } } },
-    { "iso": "AT", "name": "Oostenrijk",          "status": "wishlist", "cityPins": { "wenen": { "lon": 16.3738, "lat": 48.2082 } } },
-    { "iso": "CH", "name": "Zwitserland",         "status": "wishlist", "cityPins": { "bern": { "lon": 7.4474, "lat": 46.9480 } } },
-    { "iso": "GR", "name": "Griekenland",         "status": "wishlist", "cityPins": { "athene": { "lon": 23.7275, "lat": 37.9838 } } },
-    { "iso": "US", "name": "Verenigde Staten",    "status": "wishlist", "cityPins": { "new york": { "lon": -74.0060, "lat": 40.7128 } } },
-    { "iso": "JP", "name": "Japan",               "status": "wishlist", "cityPins": { "tokio": { "lon": 139.6917, "lat": 35.6895 } } },
-    { "iso": "TH", "name": "Thailand",            "status": "wishlist", "cityPins": { "bangkok": { "lon": 100.5018, "lat": 13.7563 } } }
+    { "iso": "NL", "name": "Nederland",   "status": "visited",  "cityPins": {
+      "klarenbeek":    { "lon": 6.0333,  "lat": 52.2167 },
+      "leidschendam":  { "lon": 4.4028,  "lat": 52.0833 }
+    } },
+    { "iso": "ES", "name": "Spanje",      "status": "visited",  "cityPins": {
+      "madrid": { "lon": -3.7038, "lat": 40.4168 }
+    } },
+    { "iso": "DE", "name": "Duitsland",   "status": "visited",  "cityPins": {
+      "unterscheffach": { "lon": 10.2833, "lat": 47.6167 }
+    } },
+    { "iso": "IT", "name": "Italië",      "status": "visited",  "cityPins": {
+      "pisa":               { "lon": 10.4017, "lat": 43.7228 },
+      "verona":             { "lon": 10.9916, "lat": 45.4384 },
+      "lucca":              { "lon": 10.5027, "lat": 43.8430 },
+      "florence":           { "lon": 11.2558, "lat": 43.7696 },
+      "monte catino therme/alto": { "lon": 10.7833, "lat": 43.8833 }
+    } },
+    { "iso": "SG", "name": "Singapore",   "status": "visited",  "cityPins": {
+      "changi": { "lon": 103.9915, "lat": 1.3644 }
+    } },
+    { "iso": "AU", "name": "Australië",   "status": "both",     "cityPins": {
+      "sydney":              { "lon": 151.2093, "lat": -33.8688 },
+      "cairns":              { "lon": 145.7710, "lat": -16.9203 },
+      "great barrier reef":  { "lon": 145.7700, "lat": -18.2871 },
+      "fitzroy island":      { "lon": 145.9950, "lat": -16.9280 },
+      "blue mountains":      { "lon": 150.3119, "lat": -33.7022 },
+      "katoomba":            { "lon": 150.3119, "lat": -33.7128 },
+      "avoca beach":         { "lon": 151.4297, "lat": -33.4728 },
+      "point clare":         { "lon": 151.3486, "lat": -33.4372 },
+      "gosford":             { "lon": 151.3428, "lat": -33.4267 },
+      "daintree national park": { "lon": 145.4172, "lat": -16.2500 },
+      "melbourne":           { "lon": 144.9631, "lat": -37.8136 }
+    } },
+    { "iso": "AT", "name": "Oostenrijk",  "status": "visited",  "cityPins": {
+      "wenen": { "lon": 16.3738, "lat": 48.2082 }
+    } },
+    { "iso": "IE", "name": "Ierland",     "status": "visited",  "cityPins": {
+      "galway": { "lon": -9.0568,  "lat": 53.2707 },
+      "dublin": { "lon": -6.2603,  "lat": 53.3498 }
+    } },
+    { "iso": "SE", "name": "Zweden",      "status": "visited",  "cityPins": {
+      "gothenburg": { "lon": 11.9746, "lat": 57.7089 }
+    } },
+    { "iso": "PT", "name": "Portugal",    "status": "wishlist", "cityPins": {
+      "porto": { "lon": -8.6291, "lat": 41.1579 }
+    } },
+    { "iso": "US", "name": "Amerika",     "status": "wishlist", "cityPins": {
+      "new york":  { "lon": -74.0060, "lat": 40.7128 },
+      "las vegas": { "lon": -115.1398, "lat": 36.1699 },
+      "miami":     { "lon": -80.1918, "lat": 25.7617 }
+    } },
+    { "iso": "CN", "name": "China",       "status": "wishlist", "cityPins": {
+      "changsha": { "lon": 112.9388, "lat": 28.2282 }
+    } },
+    { "iso": "GR", "name": "Griekenland", "status": "wishlist" },
+    { "iso": "IS", "name": "IJsland",     "status": "wishlist" },
+    { "iso": "NZ", "name": "Nieuw-Zeeland", "status": "wishlist" },
+    { "iso": "BE", "name": "België",      "status": "wishlist", "cityPins": {
+      "ardennen": { "lon": 5.5000, "lat": 50.2500 },
+      "gent":     { "lon": 3.7250, "lat": 51.0543 }
+    } }
   ]
 }
