@@ -457,6 +457,7 @@
       "GEVOEL",
       "GEWEER",
       "GITAAR",
+      "GOONEN",
       "GORDEL"
     ],
     "H": [
@@ -474,6 +475,7 @@
       "JUNGLE"
     ],
     "K": [
+      "KANKER",
       "KAPPER",
       "KATOEN",
       "KEEPER",
@@ -529,6 +531,7 @@
       "PARADE",
       "PEUTER",
       "PILOOT",
+      "POEPEN",
       "PYJAMA"
     ],
     "R": [
@@ -553,6 +556,7 @@
       "SLAGER",
       "SNEEUW",
       "SPELER",
+      "SPERMA",
       "STRAAL",
       "STRAAT",
       "STRAND",
@@ -690,7 +694,9 @@
       "PROJECT"
     ],
     "R": [
+      "RASTER",
       "RECHTER",
+      "REMMEN",
       "RESPECT",
       "ROLTRAP"
     ],

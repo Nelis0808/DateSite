@@ -441,8 +441,13 @@ export function initBoodschappenlijst() {
     pollTimer = setInterval(() => {
       // Skip a tick if a save is still in flight, so we never
       // overwrite `items` with stale server data right after a
-      // change we just made ourselves.
-      if (!saveInFlight) loadList({ silent: true });
+      // change we just made ourselves. Also skip while a drag is in
+      // progress: render() replaces the whole list's innerHTML, which
+      // would orphan the row currently being dragged (it's still
+      // referenced by draggingLi but no longer part of the live DOM)
+      // — finishing the drag after that could re-insert it alongside
+      // its freshly-rendered twin, showing the item twice.
+      if (!saveInFlight && !draggingLi) loadList({ silent: true });
     }, POLL_INTERVAL_MS);
   }
 

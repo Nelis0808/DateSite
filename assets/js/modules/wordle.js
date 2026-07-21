@@ -27,11 +27,11 @@
 // LANGUAGE: two word lists exist side by side — the original English
 // one (word-list.json) and a Dutch one (word-list-nl.json, same
 // shape, no accented letters so it works with the plain A-Z on-screen
-// keyboard). Which one a round uses defaults to the browser's
-// language (navigator.language) the first time the page is opened,
-// then can be flipped with the EN/NL pill next to the length picker
-// — that manual choice is remembered in localStorage from then on,
-// same pattern as the length picker itself (see LANG_STORAGE_KEY).
+// keyboard). Dutch (NL) is the default the first time the page is
+// opened, and the NL pill is listed first — then can be flipped with
+// the NL/EN pill next to the length picker — that manual choice is
+// remembered in localStorage from then on, same pattern as the
+// length picker itself (see LANG_STORAGE_KEY).
 // =================================================================
 
 const DATA_URLS = {
@@ -45,8 +45,7 @@ const LANG_STORAGE_KEY = 'wordleLang';
 const ENTER_FLASH_MS = 500;
 
 function detectDefaultLang() {
-  const browserLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
-  return browserLang.startsWith('nl') ? 'nl' : 'en';
+  return 'nl';
 }
 
 const KEYBOARD_ROWS = [
@@ -137,8 +136,8 @@ export function initWordle() {
     if (!langPicker) return;
     langPicker.innerHTML = '';
     [
-      { code: 'en', label: 'EN' },
       { code: 'nl', label: 'NL' },
+      { code: 'en', label: 'EN' },
     ].forEach(({ code, label }) => {
       const btn = document.createElement('button');
       btn.type = 'button';

@@ -36,8 +36,8 @@
    the whole #wallzApp section, makes them available everywhere they
    are used — including inside .wallz-board, which is a descendant. */
 #wallzApp {
-  --wallz-p1: #7B68EE; /* matches assets/icons/connect4/player-blue.svg */
-  --wallz-p2: #FF6B9D; /* matches assets/icons/connect4/player-pink.svg */
+  --wallz-p1: #7B68EE; /* matches assets/icons/wallz/player-blue.svg */
+  --wallz-p2: #FF6B9D; /* matches assets/icons/wallz/player-pink.svg */
 }
 
 /* Score numbers otherwise share games.css's generic .ttt-score-value

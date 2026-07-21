@@ -24,8 +24,8 @@
 .snake-board {
   --snake-cols: 30;
   --snake-rows: 20;
-  --snake-p1: #7B68EE; /* matches assets/icons/connect4/player-blue.svg */
-  --snake-p2: #FF6B9D; /* matches assets/icons/connect4/player-pink.svg */
+  --snake-p1: #7B68EE; /* matches assets/icons/snake/player-blue.svg */
+  --snake-p2: #FF6B9D; /* matches assets/icons/snake/player-pink.svg */
   display: grid;
   grid-template-columns: repeat(var(--snake-cols), 1fr);
   grid-template-rows: repeat(var(--snake-rows), 1fr);

@@ -19,8 +19,8 @@
 // and keeps everything consistent with the rest of the site's
 // (non-canvas) game pages.
 //
-// AVATARS: reuses connect4's exact blue/pink SVG icon pair
-// (assets/icons/connect4/player-blue.svg / player-pink.svg) for the
+// AVATARS: uses Snake's own blue/pink SVG icon pair
+// (assets/icons/snake/player-blue.svg / player-pink.svg) for the
 // player heads before falling back to a plain colored square if
 // those ever fail to load — see buildHeadCell(). The trail/head
 // cell colors are FIXED brand colors (not the theme-swappable
@@ -132,8 +132,8 @@ export function initSnake() {
     cell.replaceChildren();
 
     const avatar = player === 1
-      ? { photo: siteRootUrl('assets/icons/connect4/player-blue.png'), svg: siteRootUrl('assets/icons/connect4/player-blue.svg') }
-      : { photo: siteRootUrl('assets/icons/connect4/player-pink.png'), svg: siteRootUrl('assets/icons/connect4/player-pink.svg') };
+      ? { photo: siteRootUrl('assets/icons/snake/player-blue.png'), svg: siteRootUrl('assets/icons/snake/player-blue.svg') }
+      : { photo: siteRootUrl('assets/icons/snake/player-pink.png'), svg: siteRootUrl('assets/icons/snake/player-pink.svg') };
 
     // Same three-tier fallback as wallz.js/connect4.js: custom photo
     // -> built-in SVG -> plain CSS-colored cell background (handled
@@ -155,8 +155,11 @@ export function initSnake() {
     cell.appendChild(img);
   }
 
+  // innerHTML (not textContent) because the winning message drops in
+  // a player-color <img> — see endRound() below. All other setStatus
+  // callers only ever pass static Dutch strings, so this is safe.
   function setStatus(text) {
-    statusEl.textContent = text;
+    statusEl.innerHTML = text;
   }
 
   function updateScoreboard() {
@@ -230,10 +233,10 @@ export function initSnake() {
       setStatus('Gelijkspel! Jullie botsten allebei tegelijk. 🤝');
     } else if (p1Dies) {
       score[2] += 1;
-      setStatus(`Speler Roze wint! Speler Roze crashte. ${siteRootUrl('assets/icons/connect4/player-pink.svg')}`);
+      setStatus(`Speler Roze wint! Speler Blauw crashte. <img src="${siteRootUrl('assets/icons/snake/player-pink.svg')}" alt="roze" class="emoji-icon">`);
     } else {
       score[1] += 1;
-      setStatus(`Speler Blauw wint! Speler Roze crashte. ${siteRootUrl('assets/icons/connect4/player-blue.svg')}`);
+      setStatus(`Speler Blauw wint! Speler Roze crashte. <img src="${siteRootUrl('assets/icons/snake/player-blue.svg')}" alt="blauw" class="emoji-icon">`);
     }
 
     updateScoreboard();

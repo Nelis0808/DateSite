@@ -16,6 +16,24 @@
   --todo-none:   #FFFFFF; /* white / no priority */
 }
 
+/* == PAGE-LEVEL CENTERING (todo.html has no own #todoApp block in
+   boodschappenlijst.css, unlike #shoppingListApp there) == */
+#todoApp {
+  text-align: center;
+}
+
+.todo-list {
+  text-align: left;
+}
+
+.todo-add-form {
+  justify-content: center;
+}
+
+.todo-add-form button[type='submit'] {
+  align-self: center;
+}
+
 /* == PRIORITY TINT (left border + faint background wash) == */
 .todo-item {
   border-left: 5px solid transparent;
@@ -75,6 +93,7 @@
   flex-wrap: wrap;
   gap: var(--space-2);
   width: 100%;
+  justify-content: center;
   order: 2; /* sits on its own row, between the text input and the submit button */
 }
 

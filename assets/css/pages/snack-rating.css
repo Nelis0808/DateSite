@@ -9,6 +9,14 @@
 #snackApp {
   width: min(92%, var(--container));
   margin-inline: auto;
+  text-align: center;
+}
+
+/* Card text itself reads better left-aligned (name/description are
+   prose, not short labels) — only the page-level chrome (headings,
+   status line, empty-state, form buttons) should be centered. */
+.snack-card {
+  text-align: left;
 }
 
 .sl-disabled .snack-add-form,
@@ -42,7 +50,8 @@
 
 .snack-card-image {
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 16 / 9;
+  max-height: 140px;
   background: var(--color-bg);
   overflow: hidden;
 }
@@ -54,11 +63,16 @@
   display: block;
 }
 
+/* Fallback (no photo added yet): a small centered icon, NOT sized to
+   fill the whole image box — it used to inherit a large font-size
+   which made the placeholder emoji look enormous compared to a real
+   thumbnail. */
 .snack-card-fallback {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.4rem;
+  font-size: 1.1rem;
+  opacity: 0.5;
 }
 
 .snack-card-body {

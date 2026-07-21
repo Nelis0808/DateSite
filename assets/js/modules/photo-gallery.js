@@ -29,7 +29,7 @@
 
 import { siteConfig } from '../config.js';
 import { qs } from './utils.js';
-import { getAuth, onAuthChange, currentPersonLabel } from './auth.js';
+import { getAuth, onAuthChange } from './auth.js';
 
 export function initPhotoGallery() {
   const root = document.getElementById('photoGalleryApp');
@@ -38,8 +38,6 @@ export function initPhotoGallery() {
   const workerUrl = siteConfig.photos?.workerUrl || '';
 
   const loggedOutNote     = qs('#pgLoggedOutNote', root);
-  const loggedInBar       = qs('#pgLoggedInBar', root);
-  const loggedInLabel     = qs('#pgLoggedInLabel', root);
   const placeholderGrid   = qs('#pgPlaceholder', root);
   const resultsGrid       = qs('#pgResults', root);
   const statusEl          = qs('#pgStatus', root);
@@ -52,7 +50,6 @@ export function initPhotoGallery() {
   // ---- View toggling ----------------------------------------------
   function showLoggedOut(message) {
     loggedOutNote.classList.remove('hidden');
-    loggedInBar.classList.add('hidden');
     placeholderGrid.classList.remove('hidden');
     resultsGrid.classList.add('hidden');
     resultsGrid.innerHTML = '';
@@ -61,10 +58,8 @@ export function initPhotoGallery() {
 
   function showLoggedIn() {
     loggedOutNote.classList.add('hidden');
-    loggedInBar.classList.remove('hidden');
     placeholderGrid.classList.add('hidden');
     resultsGrid.classList.remove('hidden');
-    loggedInLabel.textContent = currentPersonLabel();
   }
 
   function workerConfigured() {

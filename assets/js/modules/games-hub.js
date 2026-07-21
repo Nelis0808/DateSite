@@ -10,13 +10,12 @@
 
 import { escapeHtml, siteRootUrl } from './utils.js';
 
-// Plain emoji per game — matches the original, simple hub style. The one
-// exception is connect4/wallz: there's no "pink circle" emoji to pair
-// with blue's 🔵, so both use the same matched-scale SVG pair
-// connect4.js uses for the in-game avatars (assets/icons/connect4/
-// player-blue.svg / player-pink.svg — identical viewBox, radius, and
-// ring style, so they line up pixel-for-pixel at any size via the
-// .emoji-icon class).
+// Plain emoji per game — matches the original, simple hub style. The
+// exceptions are connect4/snake/wallz: there's no "pink circle" emoji
+// to pair with blue's 🔵, so each uses its own matched-scale SVG pair
+// (assets/icons/connect4, assets/icons/snake, assets/icons/wallz —
+// identical viewBox, radius, and ring style, so they line up
+// pixel-for-pixel at any size via the .emoji-icon class).
 const games = [
   {
     title: 'Boter, Kaas & Eieren',
@@ -37,18 +36,20 @@ const games = [
     title: 'Snake',
     description: 'Laat een spoor achter je en probeer de ander erin te laten crashen.',
     href: 'games/snake.html',
-    emoji: `<img src="${siteRootUrl('assets/icons/connect4/player-blue.svg')}" alt="" class="emoji-icon"><img src="${siteRootUrl('assets/icons/connect4/player-pink.svg')}" alt="" class="emoji-icon">`,
+    emoji: `${get_emoji('snake/player-blue.png', 'snake/player-blue.svg')}
+            ${get_emoji('snake/player-pink.png', 'snake/player-pink.svg')}`,
     status: 'available',
   },
   {
     title: 'Wallz',
     description: 'Beweeg en soboteer om als eerst naar de overkant te komen.',
     href: 'games/wallz.html',
-    emoji: `<img src="${siteRootUrl('assets/icons/connect4/player-blue.svg')}" alt="" class="emoji-icon"><img src="${siteRootUrl('assets/icons/connect4/player-pink.svg')}" alt="" class="emoji-icon">`,
+    emoji: `${get_emoji('wallz/player-blue.png', 'wallz/player-blue.svg')}
+            ${get_emoji('wallz/player-pink.png', 'wallz/player-pink.svg')}`,
     status: 'available',
   },
   {
-    title: 'Wordle EN/NL',
+    title: 'Wordle NL/EN',
     description: 'Raad het Engelse woord.',
     href: 'games/wordle.html',
     emoji: '🟩🟨',

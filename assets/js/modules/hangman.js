@@ -12,10 +12,10 @@
 // the drawing (assets/icons/hangman/stages, drawn inline as SVG —
 // see HANGMAN_STAGES below).
 //
-// LANGUAGE: same EN/NL word-list toggle as wordle.js — see the
-// LANGUAGE comment there for the full explanation. Defaults to the
-// browser's language, overridable with the EN/NL pill, remembered in
-// localStorage from then on (LANG_STORAGE_KEY below).
+// LANGUAGE: same NL/EN word-list toggle as wordle.js — see the
+// LANGUAGE comment there for the full explanation. Defaults to Dutch
+// (NL), overridable with the NL/EN pill, remembered in localStorage
+// from then on (LANG_STORAGE_KEY below).
 // =================================================================
 
 const DATA_URLS = {
@@ -29,8 +29,7 @@ const LENGTH_STORAGE_KEY = 'hangmanLength';
 const LANG_STORAGE_KEY = 'hangmanLang';
 
 function detectDefaultLang() {
-  const browserLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
-  return browserLang.startsWith('nl') ? 'nl' : 'en';
+  return 'nl';
 }
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -112,8 +111,8 @@ export function initHangman() {
     if (!langPicker) return;
     langPicker.innerHTML = '';
     [
-      { code: 'en', label: 'EN' },
       { code: 'nl', label: 'NL' },
+      { code: 'en', label: 'EN' },
     ].forEach(({ code, label }) => {
       const btn = document.createElement('button');
       btn.type = 'button';

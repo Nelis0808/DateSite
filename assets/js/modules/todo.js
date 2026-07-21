@@ -91,6 +91,7 @@ export function initTodo() {
       const data = await response.json();
       items = Array.isArray(data.items) ? data.items : [];
       renderAll();
+      if (!silent) statusEl.classList.add('hidden');
     } catch (error) {
       console.error('Kon TODO-lijst niet laden:', error);
       if (!silent) setStatus('❌ Kon lijstje niet laden. Probeer het opnieuw.', true);
@@ -476,7 +477,11 @@ export function initTodo() {
   function startPolling() {
     stopPolling();
     pollTimer = setInterval(() => {
-      if (!saveInFlight) loadItems({ silent: true });
+      // Skip while saving (avoid clobbering an in-flight change) or
+      // while a drag is active — renderAll() replaces the list's
+      // innerHTML mid-drag, orphaning the dragged row and letting
+      // endDrag() re-insert a duplicate of it once released.
+      if (!saveInFlight && !draggingLi) loadItems({ silent: true });
     }, POLL_INTERVAL_MS);
   }
 

@@ -61,20 +61,19 @@ const TOTAL_WALLS = 10;
 
 // Same layered fallback as connect4.js / tictactoe.js: photo -> custom
 // SVG -> emoji, tried in that order via <img onerror> (see buildAvatar
-// below). Reuses the same connect4 asset pair so all board games share
-// one consistent blue/pink identity — drop in real photos later by
-// replacing assets/icons/connect4/player-blue.png / player-pink.png
+// below). Uses Wallz's own icon set (assets/icons/wallz) — drop in
+// real photos later by replacing player-blue.png / player-pink.png
 // (same filenames), nothing else needs to change.
 const AVATARS = {
   1: {
-    photo: siteRootUrl('assets/icons/connect4/player-blue.png'),
-    svg: siteRootUrl('assets/icons/connect4/player-blue.svg'),
+    photo: siteRootUrl('assets/icons/wallz/player-blue.png'),
+    svg: siteRootUrl('assets/icons/wallz/player-blue.svg'),
     emoji: '🔵',
     alt: 'Speler Blauw',
   },
   2: {
-    photo: siteRootUrl('assets/icons/connect4/player-pink.png'),
-    svg: siteRootUrl('assets/icons/connect4/player-pink.svg'),
+    photo: siteRootUrl('assets/icons/wallz/player-pink.png'),
+    svg: siteRootUrl('assets/icons/wallz/player-pink.svg'),
     emoji: '🩷',
     alt: 'Speler Roze',
   },
@@ -372,8 +371,11 @@ export function initWallz() {
     refreshPreview();
   }
 
+  // innerHTML (not textContent) because the winning message drops in
+  // a player-color <img> — see endRound() below. All other setStatus
+  // callers only ever pass static Dutch strings, so this is safe.
   function setStatus(text) {
-    statusEl.textContent = text;
+    statusEl.innerHTML = text;
   }
 
   function playerLabel(player) {
@@ -501,9 +503,9 @@ export function initWallz() {
     score[winner] += 1;
     scoreP1El.textContent = String(score[1]);
     scoreP2El.textContent = String(score[2]);
-    setStatus(`${playerLabel(winner)} wint! ${winner === 1 ? 
-        `${siteRootUrl('assets/icons/connect4/player-blue.svg')}` : 
-        `${siteRootUrl('assets/icons/connect4/player-pink.svg')}`} Nieuwe ronde start zo...`);
+    setStatus(`${playerLabel(winner)} wint! <img src="${winner === 1 ?
+        siteRootUrl('assets/icons/wallz/player-blue.svg') :
+        siteRootUrl('assets/icons/wallz/player-pink.svg')}" alt="${winner === 1 ? 'blauw' : 'roze'}" class="emoji-icon"> Nieuwe ronde start zo...`);
     window.setTimeout(startRound, 1500);
   }
 
